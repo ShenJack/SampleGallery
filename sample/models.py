@@ -16,7 +16,7 @@ STATE_CHOICES = (
 class Sample(models.Model):
     name = models.TextField(default=timezone.now())
     description = models.TextField(default=timezone.now())
-    uploader = models.ForeignKey('auth.User',on_delete=models.SET_DEFAULT,default=1)
+    uploader = models.ForeignKey('auth.User',related_name='samples',on_delete=models.SET_DEFAULT,default=1)
     uploadTime = models.DateTimeField(default=timezone.now())
     reviewedTime = models.DateTimeField(default=timezone.now())
     passTime = models.DateTimeField(default=timezone.now())
