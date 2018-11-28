@@ -1,0 +1,341 @@
+<template>
+  <div>
+    <Modal
+      v-model="showModal"
+      title="Common Modal dialog box title"
+      v-bind:ok-text=okText
+      cancel-text="取消"
+          :closable="false"
+    :mask-closable="false"
+      @on-visible-change="this.onShowChange"
+    >
+      <p slot="header" style="color:#529bff;text-align:center">
+        <Icon type="information-circled"></Icon>
+        <span>{{ "{{title}}" }}</span>
+      </p>
+      <Form ref="formValidate" class="form" label-position="left"  :rules="ruleValidate" :model="editableData">
+        <Divider orientation="left">基本信息</Divider>
+        {% for field in data.fields %}
+          {% if field.editable == True %}
+            <div class="form-level">
+              {% if field.type == "string" %}
+                {% if field.key!='password' %}
+                <FormItem  class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                  <Input @on-change="change" v-model="editableData.{{ field.key }}" placeholder="请输入"
+                         style="width: 300px"/>
+                </FormItem>
+                  {% endif %}
+              {% elif field.type == "number" %}
+                <FormItem class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                  <InputNumber :max="{{ field.max }}" :min="{{ field.min }}"  @on-change="change"
+                               v-model="editableData.{{ field.key }}"></InputNumber>
+                </FormItem>
+              {% elif field.type == "select" %}
+                {% if field.const_select %}
+                  {% if field.has_value %}
+                    <FormItem class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                      <Select @on-change="change"
+                              class="search-item-input"
+                              v-model="editableData.{{ field.key }}" {% if field.multiple %}multiple{% endif %}>
+                        <Option v-for="item in {{ field.key }}Select" :value="item.key" :key="item.key"
+                                :label="item.value"
+                        >
+                          {{ "{{item.value}}" }}
+                        </Option>
+                      </Select>
+                    </FormItem>
+                  {% else %}
+                    <FormItem class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                      <Select @on-change="change"
+                              class="search-item-input"
+                              v-model="editableData.{{ field.key }}" filterable {% if field.multiple %}multiple{% endif %}>
+                        <Option v-for="item in {{ field.key }}Select" :value="item" :key="item"
+                                :label="item"
+                        >
+                          {{ "{{item}}" }}
+                        </Option>
+                      </Select>
+                    </FormItem>
+                  {% endif %}
+                {% else %}
+                  <FormItem
+                    {% if field.key == 'shop_id' %}
+                            v-if="this.$store.getters.userinfoGetter.role_names.some(item=>item==='admin')"
+                            :disabled="useInside"
+                            {% endif %}
+                    class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                    <Select
+                            class="search-item-input"
+                            {% if field.key == 'shop_id' %}
+                            @on-change="reSelect"
+                            {% endif %}
+                            v-model="editableData.{{ field.key }}" filterable @on-query-change="onQueryChange{{ field.key }}" :loading="{{ field.key }}Loading" {% if field.multiple %}multiple{% endif %}>
+                      <Option v-for="item in {{ field.key }}Select" :value="item.id"
+                              :key="item.id"
+                              :label="item.name"
+                      >
+                        <span style="float:right;">{{ "{{item.name}}" }}</span>
+                        <span style="color:#aaa">{{ "{{item.id}}" }}</span>
+                      </Option>
+                    </Select>
+                  </FormItem>
+                {% endif %}
+              {% elif field.type == "json" %}
+                <br>
+                <Divider orientation="left">{{ field.name }}</Divider>
+                <transition-group name="fade">
+                  <Row class="json-pair" v-for="item,index in this.{{ field.key }}" :key="index">
+                    <AutoComplete :data='elementSelect' @on-change="change" v-model="item.name" style="width:200px">
+                  </AutoComplete>
+                    <InputNumber @on-change="change" v-model="item.value" :max="1000" :min="1"
+                                 placeholder="请输入"/>
+                    <Button @click="delete{{ field.key |capitalize }}Json(index)"
+                            >删除</Button>
+                  </Row>
+                </transition-group>
+                <Row>
+                  <Button @click="add{{ field.key |capitalize }}Json" type="dashed" icon="md-add">
+                    添加
+                  </Button>
+                </Row>
+              {% endif %}
+            </div>
+
+          {% endif %}
+        {% endfor %}
+      </Form>
+      <div slot="footer">
+    <i-button type="text" size="large" @click.native="cancel">{{ '{{ cancelText }}' }}</i-button>
+    <i-button type="primary" size="large" @click.native="ok">{{ '{{okText}}' }}</i-button>
+  </div>
+    </Modal>
+  </div>
+</template>
+
+<script>
+  import {
+    get{{ data.class_name | capitalize }},
+  } from "Api/{{ data.class_name}}"
+  import {cloneDeep} from 'lodash'
+  import {calculateChangedFields, updateWithinField} from "Utils/tools"
+
+  {% for selectField in data.selectFields() %}
+    {% if selectField.const_select %}
+      import {get{{ selectField.key| capitalize }}Select} from "Const/index"
+    {% else %}
+      import {get{{ selectField.childClassName| capitalize }}s} from "Api/{{ selectField.childClassName }}"
+      import {query{{ selectField.childClassName| capitalize }}ById} from "Api/{{ selectField.childClassName }}"
+    {% endif %}
+  {% endfor %}
+
+  {% if data.jsonFields() %}
+    import {getElementSelect} from "Const/index"
+  {% endif %}
+
+  export default {
+    name: "editDialog",
+    props: {
+      showModal: Boolean,
+      onOk: Function,
+      onCancel: Function,
+      useInside:Boolean,
+      farmer: Object,
+      id: "",
+    },
+    data() {
+      return {
+        title: "编辑{{ data.class_name_text }}",
+        showModel: false,
+        okText: "编辑",
+        cancelText: "取消",
+        srcData:{},
+        loadingCount:0,
+      ruleValidate:{
+          {% for field in data.fields %}
+            {% if field.editable %}
+            {{ field.key }}:[
+                { {% if field.required %}required:true,{% endif %}{% if field.ruleType %}type:'{{field.ruleType}}',{% endif %}trigger:'blur',message:"{{ field.name }}有误"},
+              ],
+            {% endif %}
+          {% endfor %}
+        },
+        {% for selectField in data.selectFields() %}
+          {{ selectField.key }}Loading:false,
+          {{ selectField.key }}Select: {},
+        {% endfor %}
+        editableData: {
+      {% for field in data.fields %}
+        {% if field.editable %}
+          {{ field.key }}:"",
+        {% endif %}
+      {% endfor %}
+    },
+      {% for jsonField in data.jsonFields() %}
+        {{ jsonField.key }}:[],
+      {% endfor %}
+    {% if data.jsonFields() %}
+      elementSelect:"",
+    {% endif %}
+    }
+    },
+  watch:{
+    loadingCount:function(newValue,oldValue){
+      if(newValue === 0 && oldValue === 1){
+        updateWithinField(this.editableData, this.srcData)
+      }
+    }
+  },
+    methods: {
+      ok() {
+        this.$refs.formValidate.validate((valid)=>{
+          if(valid){
+            {% if data.jsonFields() %}
+              {% for jsonField in data.jsonFields() %}
+                this.editableData.{{ jsonField.key }} = this.{{ jsonField.key }};
+              {% endfor %}
+            {% endif %}
+            this.$emit('onOk', this.editableData);
+          }else {
+            this.$Message.error('有误!');
+          }
+        })
+      },
+      cancel() {
+        this.$emit('onCancel');
+      },
+      fetchData() {
+        get{{ data.class_name |capitalize }}(this.id).then((response) => {
+          let remoteData = response.data.{{ data.class_name }};
+          this.srcData = response.data.{{ data.class_name }};
+          {% for jsonField in data.jsonFields() %}
+            this.{{ jsonField.key }} = remoteData.{{ jsonField.key }};
+          {% endfor %}
+
+            this.fetchSelect();
+
+        });
+
+      },
+      onShowChange() {
+        if(this.showModal){
+
+          this.fetchData();
+        }else {
+          this.srcData = {};
+
+        }
+      },
+      fetchSelect() {
+        {% for selectField in data.selectFields() %}
+          {% if selectField.const_select %}
+            this.{{ selectField.key }}Select = get{{ selectField.key|capitalize }}Select();
+          {% else %}
+            this.loadingCount++;
+            get{{ selectField.childClassName | capitalize }}s({% if selectField.childClassName!='shop' %}
+              {shop_id:this.editableData.shop_id}
+            {% endif %}).then((resp) => {
+              let list = [];
+              resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                list.push({
+                  "id": item.id,
+                  "name": item.name
+                })
+              });
+              if(!list.find(item=>item.id === this.srcData.{{ selectField.childClassName }}.id)){
+                 list.push({
+                  "id": this.srcData.{{ selectField.childClassName }}.id,
+                  "name": this.srcData.{{ selectField.childClassName }}.name
+                })
+                }
+              this.{{ selectField.key }}Select = list;
+              this.loadingCount--;
+            });
+          {% endif %}
+        {% endfor %}
+        {% if data.fetchSelectFields()|length==0 %}
+          updateWithinField(this.editableData, this.srcData)
+          {% endif %}
+        {% if data.jsonFields() %}
+          this.elementSelect = getElementSelect();
+        {% endif %}
+      },
+      {% for selectField in data.selectFields() %}
+          {% if not selectField.const_select %}
+            onQueryChange{{ selectField.key }}(id) {
+              query{{ selectField.childClassName | capitalize }}ById(id).then((resp) => {
+              let list = [];
+              resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                list.push({
+                  "id": item.id,
+                  "name": item.name
+                })
+              });
+              this.{{ selectField.key }}Loading = false;
+              this.{{ selectField.key }}Select = list;
+            })
+          },
+        {% endif %}
+      {% endfor %}
+      {% if data.jsonFields() %}
+        {% for jsonField in data.jsonFields() %}
+          add{{ jsonField.key |capitalize }}Json() {
+            this.change();
+            this.{{ jsonField.key }}.push({
+              "key": "",
+              "value": 0,
+            })
+          },
+          delete{{ jsonField.key |capitalize }}Json(index) {
+            this.change();
+            this.{{ jsonField.key }}.splice(index, 1);
+          },
+        {% endfor %}
+
+      {% endif %}
+      change() {
+        this.savable = true;
+      },
+      reSelect(){
+        this.fetchSelectByShop()
+          this.editableData.farmer_id = "";
+          this.editableData.crop_id="";
+          this.editableData.fertilizer_id= "";
+      },
+      fetchSelectByShop(){
+        {% for selectField in data.fetchSelectFields() %}
+          {% if selectField.key!='shop_id' %}
+              get{{ selectField.childClassName | capitalize }}s({shop_id:this.editableData.shop_id}).then((resp) => {
+              let list = [];
+              resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                list.push({
+                  "id": item.id,
+                  "name": item.name
+                })
+              });
+              this.{{ selectField.key }}Select = list;
+            });
+
+          {% endif %}
+        {% endfor %}
+
+      }
+    },
+
+    created: function () {
+
+    },
+
+  };
+</script>
+
+<style scoped>
+  .form-level {
+    margin-bottom: 10px;
+  }
+
+  .json-pair {
+    margin-bottom: 10px;
+  }
+</style>
+
+

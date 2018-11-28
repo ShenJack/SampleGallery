@@ -1,0 +1,731 @@
+<template>
+    <div>
+        <div class="table" id="detail-table">
+            <Row>
+                <p class="tableName">{{ data.class_name_text }}
+                    <span v-if="currentData.name">
+                <Icon type="ios-arrow-forward"/>
+                {{ '{{currentData.name}}' }}
+            </span>
+                    <span v-else-if="currentData.id">
+                <Icon type="ios-arrow-forward"/>
+                {{ '{{currentData.id}}' }}
+            </span>
+                    </span v-else>
+                    <span></span>
+                </p>
+                {#        <Button disabled v-if="!next_editable" @click="edit_next" class="save-button"#}
+                {#        >已经是最后一个#}
+                {#        </Button>#}
+                {#        <Button v-else @click="edit_next" class="save-button"#}
+                {#        >修改下一个#}
+                {#        </Button>#}
+                <Button @click="back" class="save-button"
+                        >返回
+                </Button>
+
+                <Button v-bind:disabled="!savable" @click="save_back" class="save-button"
+                >保存并返回列表
+                </Button>
+                <Button v-bind:disabled="!savable" @click="save" class="save-button"
+                        type="primary">保存
+                </Button>
+
+            </Row>
+            <Form ref="formValidate" class="form" label-position="left"  :rules="ruleValidate" :model="currentData">
+                <Divider orientation="left">基本信息</Divider>
+                {% for field in data.fields %}
+                    {% if field.editable == True %}
+                        <div class="form-level">
+                            {% if field.type == "string" %}
+                              {% if field.key!='password' %}
+                                <FormItem class="form-item"
+                                          label="{{ field.name }}" prop="{{ field.key }}">
+                                    <Input @on-change="change" v-model="currentData.{{ field.key }}" placeholder="请输入"
+                                           style="width: 300px"/></FormItem>
+                                {% if field.image %}
+                                    <img height="300" width="300" :src="currentData.{{ field.key }}" alt="">
+                                {% endif %}
+                                {% endif %}
+                            {% elif field.type == "number" %}
+                                <FormItem class="form-item"
+                                          label="{{ field.name }}" prop="{{ field.key }}">
+                                    <InputNumber @on-change="change" :max="{{ field.max }}" :min="{{ field.min }}"
+                                                 v-model="currentData.{{ field.key }}"></InputNumber>
+                                </FormItem>
+                            {% elif field.type == "select" %}
+                                {% if field.const_select %}
+                                    {% if field.has_value %}
+                                        <FormItem class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                                            <Select @on-change="change"
+                                                    class="search-item-input"
+                                                    v-model="currentData.{{ field.key }}" filterable
+                                                    {% if field.multiple %}multiple{% endif %}>
+                                                <Option v-for="item in {{ field.key }}Select" :value="item.key"
+                                                        :key="item.key"
+                                                        :label="item.value"
+                                                >
+                                                    {{ "{{item.value}}" }}
+                                                </Option>
+                                            </Select>
+                                        </FormItem>
+                                    {% else %}
+
+                                             <FormItem class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                                            <Select @on-change="change"
+                                                    class="search-item-input"
+                                                    v-model="currentData.{{ field.key }}" filterable
+                                                    {% if field.multiple %}multiple{% endif %}>>
+                                                <Option v-for="item in {{ field.key }}Select" :value="item" :key="item"
+                                                        :label="item"
+                                                >
+                                                    {{ "{{item}}" }}
+                                                </Option>
+                                            </Select>
+                                        </FormItem>
+
+                                    {% endif %}
+                                {% else %}
+                                    <FormItem class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                                        <Select @on-change="change"
+                                                class="search-item-input"
+                                                v-model="currentData.{{ field.key }}" filterable
+                                                {% if field.multiple %}multiple{% endif %}>>
+                                            <Option v-for="item in this.{{ field.key }}Select" :value="item.id"
+                                                    :key="item.id"
+                                                    :label="item.name"
+                                            >
+                                                <span style="float:right;">{{ "{{item.name}}" }}</span>
+                                                <span style="color:#aaa">{{ "{{item.id}}" }}</span>
+                                            </Option>
+                                        </Select>
+                                    </FormItem>
+                                {% endif %}
+                            {% elif field.type == "json" %}
+                                <br>
+                                <Divider orientation="left">{{ field.name }}</Divider>
+                                <transition-group name="fade">
+                                    <Row class="json-pair" v-for="item,index in this.{{ field.key }}" :key="index">
+                                        <AutoComplete :data='elementSelect' @on-change="change" v-model="item.name" style="width:200px">
+                  </AutoComplete>
+                                        <InputNumber @on-change="change" v-model="item.value" :max="1000" :min="1"
+                                                     placeholder="请输入"/>
+                                        <Button @click="delete{{ field.key |capitalize }}Json(index)" id="add-button"
+                                                >删除</Button>
+                                    </Row>
+                                </transition-group>
+                                <Row>
+                                    <Button @click="add{{ field.key |capitalize }}Json" id="add-button" type="dashed" icon="md-add">
+                                        添加
+                                    </Button>
+                                </Row>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                    {% endif %}
+                {% endfor %}
+            {% if data.class_name=='farmer' %}
+                            <Divider orientation="left">身份卡</Divider>
+                            <Form label-position="right">
+                              <FormItem style="margin-bottom: 3px" v-for="card,index in cards" label="卡号" :key="index">
+                                     <Input style="width: 200px" v-model="card.id_number" disabled></Input>
+                              </FormItem>
+                             <FormItem style="margin-top: 14px">
+                               <Button @click="addCard" id="add-button" type="dashed" icon="md-add">
+                                        添加
+                               </Button>
+                             </FormItem>
+                            </Form>
+            {% endif %}
+            </Form>
+        {% if data.class_name=='shop' %}
+                            <Divider style="margin-top: 50px" orientation="left">消费汇总</Divider>
+                            <ConsumeRecordSum :shop_id="srcData.id"></ConsumeRecordSum>
+            {% endif %}
+        </div>
+        {% for child in data.childs() %}
+            {% if child.childType!="json" and not child.hideInDetail %}
+                <div class="table children-table">
+                    <Divider
+                             orientation="left">{{ child.childClass.class_name_text }}
+                        {% if child.childType == 'detail' %}
+                          <Icon type="ios-arrow-forward"/>
+                        {{ '{{'+child.key + ".srcData.name}}" }}
+                            <Button @click="this.{{ child.key }}.goto" style="margin:0 0 2px 10px">
+                                <Icon type="md-arrow-forward"></Icon>
+                            </Button>
+                        {% endif %}</Divider>
+                {% if data.class_name=='farmer' and child.childType == 'list' %}
+                    <FarmlandList :useInside="true" :farmer="currentData"></FarmlandList>
+                {% else %}
+                    <Table class="tableContent" :columns={{ child.key + ".columns" }} :data={{ child.key + ".data" }}
+                           :show-header={{ child.key + ".showHeader" }}></Table>
+                  {% endif %}
+                </div>
+            {% endif %}
+            {% if child.childType == "list" and data.class_name != 'farmer' %}
+
+                  <div style="margin: 10px 0px 20px 50px;overflow: hidden">
+                    <div style="float: left;">
+                        <Page :page-size="20" :total="{{ child.key }}.itemCount" :current="{{ child.key }}.currentPage"
+                              @on-change="{{ child.key }}changePage"></Page>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+        <br>
+        <br>
+        <br>
+    {% if data.class_name=='farmer' %}
+      <AddCardDialog :farmerId="id" :showModal="showModal" @ok="handleCardOk" @cancel="handleCardCancel"></AddCardDialog>
+    {% endif %}
+    </div>
+</template>
+<script>
+    import {
+        get{{ data.class_name | capitalize }}s,
+        get{{ data.class_name | capitalize }},
+        edit{{data.class_name | capitalize}}
+    } from "Api/{{data.class_name }}";
+    import {getName} from "Const/index"
+    import {updateWithinField} from "Utils/tools"
+
+    {% if data.class_name == "farmer" %}
+      import FarmlandList from "Views/farmland/farmlandList"
+      import AddCardDialog from 'Views/AddCardDialog'
+      import {getCards} from "Api/card"
+      import {setCardId} from "Api/card"
+    {% endif %}
+
+    {% for selectField in data.selectFields() %}
+        {% if selectField.const_select %}
+            import {get{{ selectField.key| capitalize }}Select} from "Const/index"
+        {% else %}
+            import {get{{ selectField.childClassName| capitalize }}s} from "Api/{{ selectField.childClassName }}"
+        {% endif %}
+    {% endfor %}
+
+    {% if data.jsonFields() %}
+        import {getElementSelect} from "Const/index"
+    {% endif %}
+
+    {% for child in data.childs() %}
+        {% if child.childType == 'list' %}
+            import {get{{child.childClass.class_name | capitalize}}s} from "Api/{{ child.childClass.class_name }}"
+        {% endif %}
+    {% endfor %}
+
+    {% if data.class_name=='shop' %}
+      import ConsumeRecordSum from "Views/ConsumeRecordSum"
+    {% endif %}
+
+    export default {
+    {% if data.class_name=='farmer' %}
+        components:{
+          FarmlandList,
+          AddCardDialog
+        },
+    {% elif data.class_name=='shop' %}
+        components:{
+          ConsumeRecordSum,
+        },
+    {% endif %}
+
+        data() {
+            return {
+          {% if data.class_name=='farmer' %}
+            cards:[],
+            showModal:false,
+          {% endif %}
+            loaded:false,
+                savable: false,
+                next_editable: true,
+                srcData: {},
+                loadingCount:0,
+                id:'',
+                currentData: {
+            {% for field in data.fields %}
+                {% if field.editable %}
+                    {{ field.key }}:"",
+                {% endif %}
+            {% endfor %}
+        },
+              ruleValidate:{
+          {% for field in data.fields %}
+            {% if field.editable %}
+                {{ field.key }}:[
+                { {% if field.required %}required:true,{% endif %}{% if field.ruleType %}type:'{{field.ruleType}}',{% endif %}trigger:'change',message:"{{ field.name }}有误"},
+              ],
+            {% endif %}
+          {% endfor %}
+        },
+            {% for selectField in data.selectFields() %}
+                {{ selectField.key }}Select: [],
+            {% endfor %}
+
+        tableColumns:
+            [
+                {
+                    width: 150,
+                    title: "",
+                    key: "key",
+                    render: (h, params) => {
+                        return h("div", [h("strong", getName(params.row.key))]);
+                    }
+                },
+                {
+                    title: " ",
+                    key: "value",
+                    render: (h, params) => {
+                        return h("div", [h("p", (params.row.value))]);
+                    }
+                }
+            ],
+            {% for child in data.childs() %}
+              {% if not child.hideInDetail %}
+                 {{ child.key }}: {
+                goto:() => {
+                    this.$router.push({
+                        name: '{{child.childClass.class_name_text}}详情',
+                        params: {id: this.{{ child.key }}.srcData.id}
+                    });
+                },
+                    data
+            :
+                []
+                    ,
+                    {% if child.childType == 'detail' %}
+                        columns: [
+                        {
+                            width: 150,
+                            title: "",
+                            key: "key",
+                            render: (h, params) => {
+                                return h("div", [h("strong", getName(params.row.key))]);
+                            }
+                        },
+                        {
+                            title: "",
+                            key: "value",
+                            render: (h, params) => {
+                                if (params.row.key === 'icon_url')
+                                    return h("div", [h("img", {
+                                        attrs: {
+                                            src: params.row.value
+                                        },
+                                        style: {
+                                            height: '45px',
+                                            width: '70px'
+                                        }
+                                    }),]);
+                                else return h("div", [h("p", (params.row.value))]);
+                            }
+                        }
+                    ],
+                        showHeader: false,
+                        {% elif child.childType == 'list' %}
+                        currentPage:1,
+                        itemCount:0,
+                        showHeader: true,
+                        columns: [{% for field in child.childClass.fields %}
+                        {% if not field.hide %}
+                            {
+                                title: "{{ field.name }}",
+                                key: "{{ field.key }}",
+                                {% if field.type == "child" %}
+                                    render: (h, params) => {
+                                        return h("div", [h("strong", getName(params.row.{{ field.key }}.{{ field.display_key }}))]);
+                                    },
+                                {% elif field.image%}
+                                    render: (h, params) => {
+                                        return h("div", [h("img", {
+                                            attrs: {
+                                                src: params.row.{{ field.key }}
+                                            },
+                                            style: {
+                                                height: '45px',
+                                                width: '70px'
+                                            }
+                                        }),])
+                                            ;
+                                    },
+                                {% else %}
+                                    render: (h, params) => {
+                                        return h("div", [h("p", getName(params.row.{{ field.key }}))]);
+                                    }
+                                {% endif %}
+                            },
+                        {% endif %}
+                    {% endfor %}
+                        {% if not child.childClass.unable_link %}
+                            {
+                                title: "操作",
+                                key: "action",
+                                width: 200,
+                                align: "center",
+                                render: (h, params) => {
+                                    return h("div", [
+                                        h(
+                                            "Button",
+                                            {
+                                                props: {
+                                                    type: "primary",
+                                                    size: "small"
+                                                },
+                                                on: {
+                                                    click: () => {
+                                                        this.$router.push({
+                                                            name: '{{ child.childClass.class_name_text }}详情',
+                                                            params: {id: params.row.id}
+                                                        });
+                                                    }
+                                                }
+                                            },
+                                            "查看"
+                                        ),
+                                    ]);
+                                }
+                            }
+                        {% endif %}
+                    ],
+                    {% endif %}
+            },
+              {% endif %}
+            {% endfor %}
+            {% for jsonField in data.jsonFields() %}
+                {{ jsonField.key }}:[],
+            {% endfor %}
+        }
+        },
+        computed: {
+            {% for child in data.childs() %}
+                {{ child.key }}Pages() {
+                    return {
+                        "_page": this.{{ child.key }}.currentPage
+                    }
+                },
+            {% endfor %}
+        },
+        watch: {
+            $route(to, from) {
+                this.fetchData();
+                this.fetchSelect();
+                if (!to.query.next) {
+                    this.next_editable = false;
+                }
+            },
+            loadingCount:function(newValue,oldValue){
+              if(newValue === 0 && oldValue === 1){
+                updateWithinField(this.currentData, this.srcData)
+                this.loaded = true;
+              }
+                }
+            },
+        methods: {
+            getName,
+            prepare_save() {
+                {% if data.jsonFields() %}
+                    {% for jsonField in data.jsonFields() %}
+                        this.currentData.{{ jsonField.key }} = this.{{ jsonField.key }};
+                    {% endfor %}
+
+                {% endif %}
+
+                return edit{{ data.class_name|capitalize }}(this.$route.params.id, this.currentData);
+
+            },
+
+            {# Fetch date we need in select.#}
+            fetchSelect() {
+                {% for selectField in data.selectFields() %}
+                    {% if selectField.const_select %}
+                        this.{{ selectField.key }}Select = get{{ selectField.key | capitalize }}Select();
+                    {% else %}
+                      this.loadingCount++;
+                        get{{ selectField.childClassName | capitalize }}s().then((resp) => {
+                            let list = [];
+                            resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                                list.push({
+                                    "id": item.id,
+                                    "name": item.name
+                                })
+                            });
+                            if(!list.find(item=>item.id === this.srcData.{{ selectField.childClassName}}.id)){
+                              list.push({
+                                    "id": this.srcData.{{ selectField.childClassName}}.id,
+                                    "name": this.srcData.{{ selectField.childClassName}}.name
+                                  })
+                                }
+                            this.{{ selectField.key }}Select = list;
+                            this.loadingCount--;
+
+                        });
+                    {% endif %}
+                {% endfor %}
+                {% if data.fetchSelectFields()|length==0 %}
+                updateWithinField(this.currentData, this.srcData)
+                  this.loaded = true
+                {% endif %}
+                {% if data.jsonFields() %}
+                    this.elementSelect = getElementSelect();
+                {% endif %}
+            },
+
+            {#selectFields' onQueryChange Function#}
+            {% for selectField in data.selectFields() %}
+                {% if not selectField.const_select %}
+                    onQueryChange{{ selectField.key }}(id) {
+                        query{{ selectField.childClassName | capitalize }}ById(id).then((resp) => {
+                            let list = [];
+                            resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                                list.push({
+                                    "id": item.id,
+                                    "name": item.name
+                                })
+                            });
+                            this.{{ selectField.key }}Loading = false;
+                            this.{{ selectField.key }}Select = list;
+                        })
+                    },
+                {% endif %}
+            {% endfor %}
+            fetchData() {
+
+                get{{ data.class_name | capitalize }}(this.$route.params.id).then((response) => {
+                    let remoteData = response.data.{{ data.class_name }};
+                    this.srcData = response.data.{{ data.class_name }};
+                    this.id = response.data.{{ data.class_name }}.id;
+                    this.currentData.id = response.data.{{ data.class_name }}.id;
+                    {% if data.class_name=='farmer' %}
+                      getCards(this.id).then(resp=>{
+                        this.cards = resp.data.farmer_numbers;
+                      })
+                    {% endif %}
+                    {% for child in data.childs() %}
+                      {% if not child.hideInDetail %}
+                        {% if child.childType == 'detail' %}
+                            this.{{ child.key }}.data = [];
+                            this.{{ child.key }}.srcData = remoteData.{{ child.childClass.class_name }};
+                            Object.keys(remoteData.{{ child.childClass.class_name }}).forEach((key) => {
+                                this.{{ child.key }}.data.push({
+                                    key: key,
+                                    value: remoteData.{{ child.childClass.class_name }}[key]
+                                })
+                            });
+                        {% else  %}
+                            this.{{ child.key }}.data = remoteData.{{ child.key}};
+                        {% endif %}
+                      {% endif %}
+                    {% endfor %}
+                    {% for jsonField in data.jsonFields() %}
+                        this.{{ jsonField.key }} = remoteData.{{ jsonField.key }};
+                    {% endfor %}
+                    this.fetchChild();
+                    this.fetchSelect();
+
+                })
+
+            },
+            change() {
+                if(this.loaded){
+                  this.savable = true;
+                }
+            },
+
+            // 修改并返回到列表
+            save_back() {
+                this.$refs.formValidate.validate((valid)=>{
+                  if(valid){
+                    this.prepare_save().then((response) => {
+                    if (response.data.code === 200) {
+                        this.$Message.success("修改成功");
+                        this.$router.push(this.$route.matched[this.$route.matched.length - 2].path)
+                    } else {
+                        this.$Message.error("修改失败");
+                    }
+                });
+                  }else {
+                    this.$Message.error('填写有误!');
+                  }
+                })
+            },
+
+            //返回
+            back(){
+              if(this.savable){
+                this.$Modal.confirm({
+                    title: '提示',
+                    content: '<p>放弃修改并返回？</p>',
+                    onOk:() => {
+                        this.$router.go(-1)
+                    },
+                            onCancel:() => {
+                        }
+                    });
+              }else {
+                this.$router.go(-1)
+              }
+
+            },
+
+            save() {
+                this.$refs.formValidate.validate((valid)=>{
+                  if(valid){
+                    this.prepare_save().then((response) => {
+                    if (response.data.code === 200) {
+                        this.$Message.success("修改成功");
+                        this.savable = false
+                    } else {
+                        this.$Message.error("修改失败");
+                    }
+                });
+                  }else {
+                    this.$Message.error('填写有误!');
+                  }
+                })
+            },
+
+            // 修改下一个
+            edit_next() {
+                if (this.$route.query.next) {
+                    this.$router.push({name: this.$route.matched.name, params: {id: this.$route.query.next}});
+                }
+            },
+
+            changePage(page) {
+                this.childCurrentPage = page;
+                this.fetchChild();
+            },
+            {% for child in data.childs() %}
+                {% if child.childType == 'list' %}
+                    {{ child.key }}changePage(page) {
+                        this.{{ child.key }}.currentPage = page;
+                        this.fetchChild{{ child.key }}();
+                    },
+                {% endif %}
+            {% endfor %}
+
+
+            {% for child in data.childs() %}
+                {% if child.childType == 'list' %}
+                    fetchChild{{ child.key }}() {
+                        let args = {...this.{{ child.key }}Pages,{{ data.class_name }}_id:this.id};
+                        get{{ child.childClass.class_name|capitalize}}s(args).then((response) => {
+                            this.{{ child.key }}.data = response.data.{{ child.childClass.class_name }}s;
+                            this.{{ child.key }}.itemCount = response.data.total;
+
+                        })
+                    },
+                {% endif %}
+            {% endfor %}
+
+
+            gotoDetail(name, param) {
+                this.$router.push({name: name,})
+            },
+            {% if data.jsonFields() %}
+                {% for jsonField in data.jsonFields() %}
+                    add{{ jsonField.key |capitalize }}Json() {
+                        this.change();
+                        this.{{ jsonField.key }}.push({
+                            "name": "",
+                            "value": 0,
+                        })
+                    },
+                    delete{{ jsonField.key |capitalize }}Json(index) {
+                        this.change();
+                        this.{{ jsonField.key }}.splice(index, 1);
+                    },
+                {% endfor %}
+
+            {% endif %}
+        fetchChild(){
+            {% for child in data.childs() %}
+                {% if child.childType == 'list' %}
+                    this.fetchChild{{ child.key }}();
+                {% endif %}
+            {% endfor %}
+        },
+    {% if data.class_name=='farmer' %}
+      addCard(){
+        this.showModal = true
+      },
+      handleCardOk(){
+        this.showModal = false
+        this.fetchData()
+      },
+      handleCardCancel(){
+        this.showModal = false
+      },
+    {% endif %}
+              fetchSelectByShop(){
+        {% for selectField in data.fetchSelectFields() %}
+          {% if selectField.key!='shop_id' %}
+              get{{ selectField.childClassName | capitalize }}s({shop_id:this.editableData.shop_id}).then((resp) => {
+              let list = [];
+              resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                list.push({
+                  "id": item.id,
+                  "name": item.name
+                })
+              });
+              this.{{ selectField.key }}Select = list;
+            });
+
+          {% endif %}
+        {% endfor %}
+
+      }
+
+        }
+        ,
+        created() {
+            this.fetchData();
+
+        }
+    }
+</script>
+<style>
+
+    .form {
+        margin-top: 10px;
+        margin-left: 10px;
+    }
+
+    .form-item {
+        margin-bottom: 12px;
+    }
+
+    .tableContent {
+        margin-top: 20px;
+    }
+
+    .tableName {
+        font-size: 20px;
+        width: 200px;
+        float: left;
+    }
+
+    .save-button {
+        float: right;
+        margin-left: 10px;
+    }
+
+    .table {
+        margin-left: 50px;
+        margin-top: 50px;
+        margin-right: 50px;
+    }
+
+    .children-table-name {
+        font-size: 15px;
+        margin-bottom: 10px;
+    }
+
+    .json-pair {
+        margin-bottom: 10px;
+    }
+
+</style>
+
+

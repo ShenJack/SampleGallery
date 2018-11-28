@@ -1,0 +1,348 @@
+<template>
+  <Modal
+    v-model="showModalLocal"
+    title="Common Modal dialog box title"
+    v-bind:ok-text=okText
+    cancel-text="取消"
+    :closable="false"
+    :mask-closable="false"
+  >
+    <p slot="header" style="color:#529bff;text-align:center">
+      <Icon type="information-circled"></Icon>
+      <span>{{ "{{title}}" }}</span>
+    </p>
+
+    <Form ref="formValidate" class="form" label-position="left" :rules="ruleValidate" :model="editableData">
+      <Divider orientation="left">基本信息</Divider>
+      {% for field in data.fields %}
+        {% if field.editable == True %}
+          <div class="form-level">
+            {% if field.type == "string" %}
+
+              <FormItem class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                <Input v-model="editableData.{{ field.key }}" placeholder="请输入"
+                       style="width: 300px"/>
+              </FormItem>
+            {% elif field.type == "number" %}
+              <FormItem class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                <InputNumber :max="{{ field.max }}" :min="{{ field.min }}"   v-model="editableData.{{ field.key }}"></InputNumber>
+              </FormItem>
+            {% elif field.type == "select" %}
+              {% if field.const_select %}
+                {% if field.has_value %}
+                  <FormItem class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                    <Select @on-change="change"
+                            class="search-item-input"
+                            v-model="editableData.{{ field.key }}" {% if field.multiple %}multiple{% endif %}>
+                      <Option v-for="item in {{ field.key }}Select" :value="item.key"
+                              :key="item.key"
+                              :label="item.value"
+                      >
+                        {{ "{{item.value}}" }}
+                      </Option>
+                    </Select>
+                  </FormItem>
+                {% else %}
+                  <FormItem class="search-item" label="{{ field["name"] }}" prop="{{ field.key }}">
+                    <Select @on-change="change"
+                            class="search-item-input"
+                            v-model="editableData.{{ field.key }}" filterable {% if field.multiple %}multiple{% endif %}>
+                      <Option v-for="item in {{ field.key }}Select" :value="item" :key="item"
+                              :label="item"
+                      >
+                        {{ "{{item}}" }}
+                      </Option>
+                    </Select>
+                  </FormItem>
+                {% endif %}
+              {% else %}
+                <FormItem
+                  {% if field.key == 'shop_id' %}
+                            v-if="this.$store.getters.userinfoGetter.role_names.some(item=>item==='admin')"
+                            :disabled="useInside"
+                {% elif field.key == 'farmer_id' %}
+                            :disabled="useInside"
+                            {% endif %}
+                  class="select-item" label="{{ field["name"] }}"
+                  prop="{{ field.key }}"
+                >
+                  <Select class="search-item-input"
+                          {% if field.key == 'shop_id' %}
+                            :disabled="useInside"
+                          @on-change="reSelect"
+                {% elif field.key == 'farmer_id' %}
+                            :disabled="useInside"
+                            {% endif %}
+                          v-model="editableData.{{ field["key"] }}" @on-query-change="onQueryChange{{ field.key }}" filterable>
+                    <Option v-for="item in {{ field.key }}Select" :value="item.id" :key="item.id"
+                            :label="item.name">
+                      <span style="float:right;">{{ "{{item.name}}" }}</span>
+                      <span style="color:#aaa">{{ "{{item.id}}" }}</span>
+                    </Option>
+                  </Select>
+                </FormItem>
+              {% endif %}
+
+            {% elif field.type == "json" %}
+              <br>
+              <Divider orientation="left">{{ field.name }}</Divider>
+              <transition-group name="fade">
+                <Row class="json-pair" v-for="item,index in this.{{ field.key }}" :key="index">
+                  <AutoComplete :data='elementSelect' @on-change="change" v-model="item.name" style="width:200px">
+                  </AutoComplete>
+                  <InputNumber @on-change="change" v-model="item.value" :max="1000" :min="1"
+                               placeholder="请输入"/>
+                  <Button @click="delete{{ field.key |capitalize }}Json(index)"
+                          icon="md-close"></Button>
+                </Row>
+              </transition-group>
+              <Row>
+                <Button @click="add{{ field.key |capitalize }}Json"  type="dashed">添加
+                </Button>
+              </Row>
+            {% endif %}
+
+          </div>
+        {% endif %}
+      {% endfor %}
+    </Form>
+  <div slot="footer">
+    <i-button type="text" size="large" @click.native="cancel">{{ '{{ cancelText }}' }}</i-button>
+    <i-button type="primary" size="large" @click.native="ok">{{ '{{okText}}' }}</i-button>
+  </div>
+  </Modal>
+  </div>
+</template>
+
+<script>
+    {% for selectField in data.selectFields() %}
+      {% if selectField.const_select %}
+        import {get{{ selectField.key| capitalize }}Select} from "Const/index"
+      {% else %}
+        import {get{{ selectField.childClassName| capitalize }}s} from "Api/{{ selectField.childClassName }}"
+        import {query{{ selectField.childClassName| capitalize }}ById} from "Api/{{ selectField.childClassName }}"
+      {% endif %}
+    {% endfor %}
+
+    {% if data.jsonFields() %}
+      import {getElementSelect} from "Const/index"
+    {% endif %}
+
+  export default {
+
+    name: "addDialog",
+    props: {
+      useInside:Boolean,
+      farmer: Object,
+      showModal: Boolean,
+      onOk: Function,
+      onCancel: Function,
+    },
+    data() {
+      const cardValidator = (rule,value,callback)=>{
+          switch (this.cardIdState) {
+            case 0:
+              callback(new Error("请刷卡"));
+              break;
+            case 1:
+              callback(new Error("验证中"));
+              break;
+            case 2:
+              callback();
+              break;
+          }
+          callback();
+        }
+      return {
+        ruleValidate:{
+          {% for field in data.fields %}
+            {% if field.editable %}
+                {{ field.key }}:[
+                { {% if field.required %}required:true,{% endif %}{% if field.ruleType %}type:'{{field.ruleType}}',{% endif %}trigger:'blur',message:"{{ field.name }}有误"},
+              ],
+            {% endif %}
+          {% endfor %}
+        },
+          {% for selectField in data.selectFields() %}
+            {{ selectField.key }}Select: {},
+          {% endfor %}
+        title: "新建{{ data.class_name_text }}",
+        okText: "新建",
+        cancelText: "取消",
+      {% if data.class_name == "farmer" %}
+        cardIdState:0,// 0 :未绑定（绑定错误） 1:等待结果 2:绑定完成
+      {% endif %}
+        editableData: {
+      {% for field in data.fields %}
+        {% if field.editable %}
+          {% if field.key == 'shop_id' %}
+              shop_id:this.$store.state.userInfo.shop_id,
+            {% else %}
+            {{ field.key }}:"",
+          {% endif %}
+
+        {% endif %}
+      {% endfor %}
+      {% if data.class_name == 'farmer' %}
+        card:'',
+      {% endif %}
+
+    },
+      {% for jsonField in data.jsonFields() %}
+        {{ jsonField.key }}:[],
+      {% endfor %}
+    {% if data.jsonFields() %}
+      elementSelect:"",
+    {% endif %}
+    }
+    },
+  computed:{
+    showModalLocal(){
+      return this.showModal;
+    }
+  },
+    methods: {
+      ok() {
+        this.$refs.formValidate.validate((valid)=>{
+          if(valid){
+            {% if data.jsonFields() %}
+              {% for jsonField in data.jsonFields() %}
+                this.editableData.{{ jsonField.key }} = this.{{ jsonField.key }};
+              {% endfor %}
+            {% endif %}
+            this.$emit('onOk', this.editableData);
+          }else {
+            this.$Message.error('有误!');
+          }
+        })
+      },
+      cancel() {
+        this.$emit('onCancel');
+      },
+      onShowChange() {
+          if(this.showModal){
+          this.fetchData();
+        }
+      },
+
+    {% if data.class_name == "farmer" %}
+      setCard(card){
+        this.cardIdState = 1;
+        setCardID(this.editableData.id,card).then(resp=>{
+          console.log(resp.data);
+          this.cardIdState = 2;
+        });
+      },
+    {% endif %}
+
+      {# Fetch date we need in select.#}
+      fetchSelect() {
+          {% for selectField in data.selectFields() %}
+            {% if selectField.const_select %}
+              this.{{ selectField.key }}Select = get{{ selectField.key |capitalize }}Select();
+            {% else %}
+              get{{ selectField.childClassName | capitalize }}s({% if selectField.childClassName!='shop' %}
+              {shop_id:this.editableData.shop_id}
+            {% endif %}).then((resp) => {
+                let list = [];
+                resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                  list.push({
+                    "id": item.id,
+                    "name": item.name
+                  })
+                });
+                this.{{ selectField.key }}Select = list;
+              });
+            {% endif %}
+          {% endfor %}
+      {% if data.jsonFields() %}
+          this.elementSelect = getElementSelect();
+        {% endif %}
+      },
+
+      {#selectFields' onQueryChange Function#}
+        {% for selectField in data.selectFields() %}
+          {% if not selectField.const_select %}
+            onQueryChange{{ selectField.key }}(id) {
+              query{{ selectField.childClassName | capitalize }}ById(id).then((resp) => {
+                let list = [];
+                resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                  list.push({
+                    "id": item.id,
+                    "name": item.name
+                  })
+                });
+                this.{{ selectField.key }}Select = list;
+
+              })
+            },
+          {% endif %}
+        {% endfor %}
+      {% if data.jsonFields() %}
+        {% for jsonField in data.jsonFields() %}
+          add{{ jsonField.key |capitalize }}Json() {
+            this.change();
+            this.{{ jsonField.key }}.push({
+              "name": "",
+              "value": 0,
+            })
+          },
+          delete{{ jsonField.key |capitalize }}Json(index) {
+            this.change();
+            this.{{ jsonField.key }}.splice(index, 1);
+          },
+        {% endfor %}
+
+      {% endif %}
+      change() {
+        this.savable = true;
+      },
+      reSelect(){
+        this.fetchSelect()
+          this.editableData.farmer_id = "";
+          this.editableData.crop_id="";
+          this.editableData.farmer_id = "";
+          this.editableData.fertilizer_id= "";
+      }
+    },
+
+    mounted: function () {
+      this.fetchSelect();
+      if(this.useInside){
+        this.editableData.farmer_id = this.farmer.id;
+        this.editableData.shop_id = this.farmer.shop_id;
+      }
+    }
+  };
+</script>
+
+<style scoped>
+  .form-level {
+    margin-bottom: 10px;
+  }
+
+  .json-pair {
+    margin-bottom: 10px;
+  }
+
+
+</style>
+
+<style>
+  .ivu-modal-body {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+
+  .ivu-select {
+    width: 300px;
+  }
+
+  .ivu-select-input {
+    width: 300px;
+  }
+
+  .ivu-input-wrapper{
+    width: 200px;
+  }
+</style>

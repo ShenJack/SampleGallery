@@ -3,6 +3,7 @@ from rest_framework import permissions, serializers, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.relations import StringRelatedField
 from rest_framework.response import Response
 
 from sample.models import Sample
@@ -10,8 +11,7 @@ from sample.permissions import IsOwnerOrReadOnly
 
 
 class SampleSerializer(serializers.ModelSerializer):
-    uploader = serializers.PrimaryKeyRelatedField(many=False, read_only=True)
-
+    uploader = StringRelatedField(many=False)
     class Meta:
         model = Sample
         fields = (
@@ -27,8 +27,7 @@ class SampleSerializer(serializers.ModelSerializer):
 
 class SampleViewSet(viewsets.ModelViewSet):
     queryset = Sample.objects.all()
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
-                          IsOwnerOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticated,)
     serializer_class = SampleSerializer
 
 
@@ -36,10 +35,18 @@ class SampleViewSet(viewsets.ModelViewSet):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
     samples = SampleSerializer(many=True, read_only=True)
+
     class Meta:
         model = User
-        fields = ('url', 'username', 'email', 'is_staff', 'samples')
+        fields = ('url', 'username', 'email', 'is_staff', 'samples', 'password')
+
+    def create(self, validated_data):
+        user = super(UserSerializer, self).create(validated_data)
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
 
 
 # ViewSets define the view behavior.
@@ -55,7 +62,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         Instantiates and returns the list of permissions that this view requires.
         """
-        if self.action == 'currentUser':
+        if self.action in ['currentUser', 'create']:
             permission_classes = []
         else:
             permission_classes = [permissions.IsAdminUser]
@@ -67,13 +74,10 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    def currentUser(self,request,pk=None):
-
-
     def retrieve(self, request, pk=None):
         queryset = User.objects.all()
         user = get_object_or_404(queryset, pk=pk)
-        serializer = UserSerializer(user,context={'request':request})
+        serializer = UserSerializer(user, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'])

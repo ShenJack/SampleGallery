@@ -1,0 +1,46 @@
+export default [
+  {
+    name: "{{ data.class_name_text }}",
+    path: "{{ data.class_name }}",
+    component: resolve => require(['Components/GenericContainer'], resolve),
+    redirect: "{{ data.class_name }}",
+    meta: {
+      visible: true,
+      roles:[
+          {% for role in  data.roles  %}
+            '{{ role }}',
+          {% endfor %}
+        ]
+    },
+    {% if data.icon %}
+      icon:"{{ data.icon }}",
+    {% endif %}
+    children: [{
+      name: "{{ data.class_name_text }}列表",
+      path: "", // xzl
+      component: resolve => require(['Views/{{ data.class_name }}/{{ data.class_name }}List'], resolve),
+      meta:{
+        visible:false,
+        roles:[
+          {% for role in  data.roles  %}
+            '{{ role }}',
+          {% endfor %}
+        ]
+      }
+    },
+      {
+        name: "{{ data.class_name_text }}详情",
+        path: ":id", // xzl
+        component: resolve => require(['Views/{{ data.class_name }}/{{ data.class_name }}Detail'], resolve),
+      meta:{
+        visible:false,
+        roles:[
+          {% for role in  data.roles  %}
+            '{{ role }}',
+          {% endfor %}
+        ]
+      }
+      }
+    ]
+  }
+]

@@ -1,0 +1,56 @@
+{% if data.jsonFields %}
+  {% for jsonField in data.jsonFields %}
+    add{{ jsonField.name |capitalize }}Json() {
+    this.change();
+    this.{{ jsonField.name }}.push({
+    "name": "",
+    "value": 0,
+    })
+    },
+    delete{{ jsonField.name |capitalize }}Json(index) {
+    this.change();
+    this.{{ jsonField.name }}.splice(index, 1);
+    },
+  {% endfor %}
+
+{% endif %}
+
+{% if data.selectFields %}
+  {% for selectField in data.selectFields %}
+    {% if not selectField.const_select %}
+      onQueryChange{{ selectField.key }}(id) {
+      get{{ selectField.childClass.class_name | capitalize }}s().then((resp) => {
+      let list = [];
+      resp.data.{{ selectField.childClass.class_name }}s.forEach((item) => {
+      list.push({
+      "id": item.id,
+      "name": item.name
+      })
+      });
+      this.{{ selectField.key }}Select = list;
+      })
+      },
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+fetchSelect() {
+{% if data.selectFields %}
+  {% for selectField in data.selectFields %}
+    {% if selectField.const_select %}
+      this.{{ selectField.key }}Select = {get{{ selectField.key| capitalize }}s}();
+    {% else %}
+      get{{ selectField.childClass.class_name | capitalize }}s().then((resp) => {
+      let list = [];
+      resp.data.{{ selectField.childClass.class_name }}s.forEach((item) => {
+      list.push({
+      "id": item.id,
+      "name": item.name
+      })
+      });
+      this.{{ selectField.key }}Select = list;
+      });
+    {% endif %}
+  {% endfor %}
+{% endif %}
+},

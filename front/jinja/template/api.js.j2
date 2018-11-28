@@ -1,0 +1,27 @@
+import axios from "Plugins/axios";
+
+export const get{{ data.class_name | capitalize }} = (id) => {
+return axios.get("/api/{{ data.class_name }}s/" + id);
+};
+
+export const query{{ data.class_name | capitalize }}ById = (id) => {
+return axios.get("/api/{{ data.class_name }}s?name_like=" + id);
+};
+
+export const get{{ data.class_name | capitalize }}s = (params) => {
+return axios.get("/api/{{ data.class_name }}s", {params: params});
+};
+
+export const add{{ data.class_name | capitalize }} = (params) => {
+return axios.post("/api/{{ data.class_name }}s", params);
+};
+
+export const edit{{ data.class_name | capitalize }} = (id, params) => {
+return axios.put("/api/{{ data.class_name }}s/" + id, params)
+};
+
+export const delete{{ data.class_name | capitalize }} = (id) => {
+return axios.delete("/api/{{ data.class_name }}s/" + id)
+};
+
+

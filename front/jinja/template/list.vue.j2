@@ -1,0 +1,512 @@
+<template>
+    <div class="table-card-body">
+        <div>
+            <Form v-if="!useInside" class="form" label-position="left" inline>
+                {% for field in data.searchFields() %}
+                  {% if field.type == 'time' %}
+                  <FormItem class="search-item" label="{{ field["name"] }}">
+                            <DatePicker :value="[searchObject.created_at_gte, searchObject.created_at_lte]" @on-change="handleDataRangeChange" type="datetimerange" format="yyyy-MM-dd" placeholder="选择查看的日期范围" style="width: 300px"></DatePicker>
+                  </FormItem>
+                    {% elif field.type=="string" %}
+                        <FormItem class="search-item" label="{{ field["name"] }}">
+                            <Input class="search-item-input" v-model="searchObject.{{ field["key"] }}"
+                                   placeholder="请输入" clearable ></Input>
+                        </FormItem>
+                    {% elif field.type=="select" %}
+                        {% if field.const_select %}
+                            {% if field.has_value %}
+                                <FormItem class="search-item" label="{{ field["name"] }}">
+                                    <Select
+                                            class="search-item-input"
+                                            v-model="searchObject.{{ field.key }}" filterable {% if data.multiple %}multiple{% endif %} clearable>
+                                        <Option v-for="item in {{ field.key }}Select" :value="item.key" :key="item.key"
+                                                :label="item.value"
+                                        >
+                                            {{ "{{item.value}}" }}
+                                        </Option>
+                                    </Select>
+                                </FormItem>
+                            {% else %}
+                                <FormItem class="search-item" label="{{ field["name"] }}">
+                                    <Select
+                                            class="search-item-input"
+                                            v-model="searchObject.{{ field.key }}" {% if field.multiple %}multiple{% endif %} clearable>
+                                        <Option v-for="item in {{ field.key }}Select" :value="item" :key="item"
+                                                :label="item"
+                                        >
+                                            {{ "{{item}}" }}
+                                        </Option>
+                                    </Select>
+                                </FormItem>
+                            {% endif %}
+                        {% else %}
+                            <FormItem {% if field.key == 'shop_id' %}
+                            v-if="this.$store.getters.userinfoGetter.role_names.some(item=>item==='admin')"
+                            {% endif %} class="search-item" label="{{ field["name"] }}">
+                                <Select class="search-item-input"
+                                        v-model="searchObject.{{ field["key"] }}" clearable  remote @on-query-change="onQueryChange{{ field.key }}" :loading="{{ field.key }}Loading" filterable {% if data.multiple %}multiple{% endif %}>
+                                    <Option v-for="item in {{ field.key }}Select" :value="item.id" :key="item.id"
+                                            :label="item.name">
+                                        <span style="float:right;">{{ "{{item.name}}" }}</span>
+                                        <span style="color:#aaa">{{ "{{item.id}}" }}</span>
+                                    </Option>
+                                </Select>
+                            </FormItem>`
+                        {% endif %}
+
+                    {% endif %}
+                {% endfor %}
+
+
+                {% if false %}
+
+                    <FormItem class="search-item" label="规则编号">
+                        <DatePicker class="search-item-input" type="date" placeholder="选择日期"
+                                    v-model="searchObject.select"></DatePicker>
+                    </FormItem>
+                    <FormItem class="search-item" label="规则编号">
+                        <RadioGroup class="search-item-input" v-model="searchObject.select">
+                            <Radio label="male">Male</Radio>
+                            <Radio label="female">Female</Radio>
+                        </RadioGroup>
+                    </FormItem>
+                    <FormItem class="search-item" label="规则编号">
+                        <CheckboxGroup class="search-item-input" v-model="searchObject.select">
+                            <Checkbox label="Eat"></Checkbox>
+                            <Checkbox label="Sleep"></Checkbox>
+                            <Checkbox label="Run"></Checkbox>
+                            <Checkbox label="Movie"></Checkbox>
+                        </CheckboxGroup>
+                    </FormItem>
+                    <FormItem class="search-item" label="规则编号">
+                        <Input class="search-item-input" v-model="searchObject.address" placeholder="请输入"></Input>
+                    </FormItem>
+                    <FormItem class="search-item" label="规则编号">
+                        <Input class="search-item-input" v-model="searchObject.address" placeholder="请输入"></Input>
+                    </FormItem>
+                {% endif %}
+                <FormItem class="search-item">
+                    <Button id="search-button" @click="search" type="primary">查询</Button>
+                    <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
+                </FormItem>
+            </Form>
+
+        </div>
+        {% if data.class_name not in  ['stock','consume_record'] %}
+          <Row class="table-operator-level">
+            <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round">新建</Button>
+        </Row>
+        {% endif %}
+        <Table :columns="columns" :data="data"></Table>
+        <div style="margin: 10px;overflow: hidden">
+            <div style="float: left;">
+                <Page :page-size="20" :total="itemCount" :current="currentPage" @on-change="changePage"></Page>
+            </div>
+        </div>
+        <editDialog
+                :useInside="useInside"
+                :farmer="farmer"
+                :showModal="showEdit"
+                :id="editingId"
+                @onOk="editOk"
+                @onCancel="editCancel"></editDialog>
+        <addDialog
+                :useInside="useInside"
+                :farmer="farmer"
+                :showModal="showAdd"
+                @onOk="addOk"
+                @onCancel="addCancel"></addDialog>
+    </div>
+</template>
+<script>
+    import editDialog from "./editDialog";
+    import addDialog from "./addDialog"
+    import {getName} from "Const"
+    import {
+        get{{ data.class_name | capitalize }}s,
+        delete{{ data.class_name | capitalize }},
+        edit{{ data.class_name | capitalize }},
+        add{{ data.class_name |capitalize }}
+    } from "Api/{{ data.class_name }}"
+
+    {% for selectField in data.selectFields() %}
+        {% if selectField.const_select %}
+            import {get{{ selectField.key| capitalize }}Select} from "Const/index"
+        {% else %}
+            import {get{{ selectField.childClassName| capitalize }}s} from "Api/{{ selectField.childClassName }}"
+            import {query{{ selectField.childClassName| capitalize }}ById} from "Api/{{ selectField.childClassName }}"
+        {% endif %}
+    {% endfor %}
+
+    export default {
+        components: {
+            editDialog,
+            addDialog
+        },
+        props:{
+          query:Object,
+          useInside:Boolean,
+          farmer: Object,
+        },
+        data() {
+            return {
+                itemCount: 0,
+                currentPage: 1,
+                showEdit: false,
+                showAdd: false,
+                editingId: "",
+                searchObject: {
+                    {% for searchField in data.searchFields() %}
+                        {{ searchField.key }}: "",
+                      {% if searchField.type=='time' %}
+                          created_at_gte: "",
+                          created_at_lte: "",
+                      {% endif %}
+                    {% endfor %}
+                },
+                loading: false,
+                {% for selectField in data.selectFields() %}
+                  {{ selectField.key }}Loading:false,
+                    {{ selectField.key }}Select: {},
+                {% endfor %}
+                columns: [
+                    {% for field in data.fields %}
+                        {% if not field.hide %}
+                            {
+                                title: "{{ field.name }}",
+                            {% if field.key=='id' %}
+                                width:60,
+                            {% endif %}
+                                key: "{{ field.key }}",
+                                {% if field.type == "child" %}
+                                    render: (h, params) => {
+                                        return h("div", [h("strong", getName(params.row.{{ field.key }}.{{ field.display_key }}))]);
+                                    },
+                                {% elif field.image%}
+                                    render: (h, params) => {
+                                        return h("div", [h("img", {
+                                            attrs: {
+                                                src: params.row.{{ field.key }}
+                                            },
+                                            style: {
+                                                height: '45px',
+                                                width: '70px'
+                                            }
+                                        }),])
+                                            ;
+                                    },
+                                  {% elif field.key == 'role_names' %}
+                                    render: (h, params)=>{
+                                    let tags = params.row.role_names.map((item) => {
+                                      return h('Tag', getName(item))
+                                       })
+                                         return h('span', tags)
+                                       },
+                                  {% elif field.key == 'username' %}
+                                    render: (h, params)=> {
+                                      return h("div", [h("p", params.row.{{ field.key }})]);
+                                    },
+                                {% else %}
+                                    render:(h, params) => {
+                                        return h("div", [h("p", getName(params.row.{{ field.key }}))]);
+                                    }
+                                {% endif %}
+                            },
+                        {% endif %}
+                    {% endfor %}
+                  {% if data.class_name not in ['stock','stock_flow','consume_record'] %}
+                                      {
+                        title: "操作",
+                        width: 200,
+                        align: "center",
+                        render: (h, params) => {
+                            return h("div", [
+                                h(
+                                    "Button",
+                                    {
+                                        props: {
+                                            type: "primary",
+                                            size: "small"
+                                        },
+                                        style: {
+                                            marginRight: "5px"
+                                        },
+                                        on: {
+                                            click: () => {
+                                                this.show(params.index);
+                                            }
+                                        }
+                                    },
+                                    "查看"
+                                ),
+                                h(
+                                    "Button",
+                                    {
+                                        props: {
+                                            type: "primary",
+                                            size: "small"
+                                        },
+                                        style: {
+                                            marginRight: "5px"
+                                        },
+                                        on: {
+                                            click: () => {
+                                                this.edit(params.index);
+                                            }
+                                        }
+                                    },
+                                    "编辑"
+                                ),
+                                h(
+                                    "Button",
+                                    {
+                                        props: {
+                                            type: "error",
+                                            size: "small"
+                                        },
+                                        on: {
+                                            click: () => {
+                                                this.remove(params.index);
+                                            }
+                                        }
+                                    },
+                                    "删除"
+                                )
+                            ]);
+                        }
+                    }
+
+                  {% endif %}
+                ],
+                data: []
+            };
+        },
+        computed: {
+            pages() {
+                return {
+                    "_page": this.currentPage
+                }
+            }
+        },
+        methods: {
+            show(index) {
+                    this.$router.push({
+                        name: "{{ data.class_name_text }}详情",
+                        {% if data.class_name == 'operator' %}
+                            params: {id: this.data[index].username},
+                        {% else %}
+                            params: {id: this.data[index].id},
+                        {% endif %}
+                    });
+                },
+            edit(index) {
+                this.showEdit = true;
+                {% if data.class_name == 'operator' %}
+                            this.editingId = this.data[index].username;
+                        {% else %}
+                            this.editingId = this.data[index].id;
+                        {% endif %}
+            },
+            remove(index) {
+                this.$Modal.confirm({
+                    title: '提示',
+                    content: '<p>确认删除？</p>',
+                    onOk:() => {
+                        delete{{ data.class_name | capitalize }}(this.data[index].id).then((response) => {
+                                if (response.data.code === 200) {
+                                    this.$Message.success("删除成功");
+                                    this.fetchData();
+                                }
+                            });
+                    },
+                            onCancel:() => {
+{#                            this.$Message.info('Clicked cancel');#}
+                        }
+                    });
+
+
+            },
+    add()
+    {
+        this.showAdd = true;
+    }
+    ,
+    resetSearch(){
+        Object.keys(this.searchObject).forEach((key) => {
+            this.searchObject[key] = "";
+        });
+        this.search();
+    }
+    ,
+    search(){
+        let args = {...this.searchObject, ...this.pages};
+        get{{ data.class_name | capitalize }}s(args).then((response) => {
+            this.data = response.data.{{ data.class_name }}s;
+        })
+    }
+    ,
+    refresh(){
+        this.search();
+    }
+    ,
+    fetchData(){
+        let args = {...this.searchObject, ...this.pages};
+        get{{ data.class_name | capitalize }}s(args).then((response) => {
+            this.data = response.data.{{ data.class_name }}s;
+            this.itemCount = response.data.total;
+        })
+    }
+    ,
+    addOk(data){
+        this.showAdd = false;
+        add{{ data.class_name | capitalize }}(data).then((response) => {
+                if (response.data.code === 200) {
+                    this.$Message.success("新建成功");
+                    this.fetchData();
+                }
+            }
+        );
+    }
+    ,
+    editOk(changedData){
+        this.showEdit = false;
+        let self = this;
+        edit{{ data.class_name | capitalize }}(this.editingId, changedData).then((response) => {
+            if (response.data.code === 200) {
+                this.$Message.success("编辑成功");
+                this.fetchData();
+            }
+        });
+    }
+    ,
+    addCancel()
+    {
+        this.showAdd = false;
+    }
+    ,
+    editCancel()
+    {
+        this.showEdit = false;
+    }
+    ,
+    fetchSelect()
+    {
+        {% for selectField in data.selectFields() %}
+            {% if selectField.const_select %}
+                this.{{ selectField.key }}Select = get{{ selectField.key| capitalize }}Select();
+            {% else %}
+                get{{ selectField.childClassName | capitalize }}s().then((resp) => {
+                    let list = [];
+                    resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                        list.push({
+                            "id": item.id,
+                            "name": item.name
+                        })
+                    });
+                    this.{{ selectField.key }}Select = list;
+                });
+            {% endif %}
+        {% endfor %}
+    }
+    ,
+
+    {#selectFields' onQueryChange Function#}
+
+    {% for selectField in data.selectFields() %}
+        {% if not selectField.const_select %}
+            onQueryChange{{ selectField.key }}(id) {
+              this.{{ selectField.key }}Loading = true;
+              if(id===''){
+                get{{ selectField.childClassName| capitalize }}s().then((resp) => {
+                let list = [];
+                resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                    list.push({
+                        "id": item.id,
+                        "name": item.name
+                    })
+                });
+
+                this.{{ selectField.key }}Loading = false;
+                this.{{ selectField.key }}Select = list;
+            })
+              }else {
+                query{{ selectField.childClassName| capitalize }}ById(id).then((resp) => {
+                let list = [];
+                resp.data.{{ selectField.childClassName }}s.forEach((item) => {
+                    list.push({
+                        "id": item.id,
+                        "name": item.name
+                    })
+                });
+                this.{{ selectField.key }}Loading = false;
+                this.{{ selectField.key }}Select = list;
+            })
+              }
+        },
+        {% endif %}
+    {% endfor %}
+    changePage(page)
+    {
+        this.currentPage = page;
+        this.fetchData();
+    },
+        {% if data.timeFields() %}
+       handleDataRangeChange(v){
+        this.searchObject.created_at_gte = v[0]
+        this.searchObject.created_at_lte = v[1]
+      },
+    {% endif %}
+    },
+
+
+
+    mounted: function() {
+          {% if data.class_name == "farmland" %}
+            if(this.useInside){
+              this.searchObject.farmer_id = this.farmer.id;
+            }
+          {% endif %}
+        this.fetchData();
+        this.fetchSelect();
+    }
+    }
+    ;
+</script>
+<style>
+    .table-card-body {
+        padding: 24px;
+    }
+</style>
+<style scoped>
+    .search-item {
+        width: 32%;
+    }
+
+    .search-item-text {
+        float: left;
+    }
+
+    .search-item-input {
+        float: left;
+        margin-left: 10px;
+        width: 60%;
+    }
+
+    .table-card-body {
+        padding: 24px;
+    }
+
+    #search-button,
+    #add-button {
+    }
+
+    .search-bar {
+    }
+
+    .table-operator-level {
+        margin-bottom: 10px;
+    }
+</style>
+
+
+

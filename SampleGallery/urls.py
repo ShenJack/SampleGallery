@@ -17,8 +17,9 @@ from django.contrib import admin
 
 from django.urls import path, include
 from rest_framework import routers, serializers, viewsets
+from rest_framework import authtoken
 from sample.serializer import SampleViewSet, UserViewSet
-
+from rest_framework.authtoken import views
 router = routers.DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'samples', SampleViewSet)
@@ -26,5 +27,6 @@ router.register(r'samples', SampleViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    path('api-auth/', include('rest_framework.urls')),
+    path('api-token-auth/', views.obtain_auth_token)
 ]
