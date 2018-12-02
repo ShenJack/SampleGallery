@@ -161,19 +161,14 @@
 </template>
 <script>
   import {
-    getOperators,
-    getOperator,
-    editOperator
-  } from "Api/operator";
+    currentUser,
+    editUser,
+  } from "Api/user";
   import {getName} from "Const/index"
   import {updateWithinField} from "Utils/tools"
-
-
   import {getRole_namesSelect} from "Const/index"
-
-  import {getShops} from "Api/shop"
-  import {currentUser} from "../../service/api/user";
   import EditPasswordDialog from './EditPasswordDialog'
+
   export default {
     components:{
       EditPasswordDialog

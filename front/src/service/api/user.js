@@ -39,5 +39,9 @@ export const loginUser = (params) => {
 
 //当前用户
 export const currentUser = (params) => {
-  return axios.get('/auth/current_user')
+  return axios.get('/auth/users/currentUser/')
 };
+
+export const editUser = (params)=>{
+  return axios.post('/auth/users/')
+}

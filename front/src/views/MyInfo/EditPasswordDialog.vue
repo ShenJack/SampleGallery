@@ -20,8 +20,7 @@
   </Modal>
 </template>
 <script>
-  import {currentUser} from "../../service/api/user";
-  import {editOperator} from "../../service/api/operator";
+  import {currentUser,editUser} from "../../service/api/user";
 
 
   export default {
@@ -71,7 +70,7 @@
             currentUser().then(resp => {
               this.srcData = resp.data.user;
               this.srcData.password = this.secondPassword;
-              editOperator(this.srcData.name,this.srcData).then(
+              editUser(this.srcData.name,this.srcData).then(
                 (response)=>{
                 this.$Message.success("密码修改成功")
                 this.$emit('ok')

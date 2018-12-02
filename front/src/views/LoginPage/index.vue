@@ -49,7 +49,7 @@
               this.$Message.success('登陆成功');
               this.setToken(resp.data.token);
               currentUser().then((resp) => {
-                this.$store.commit('SET_USER_INFO', resp.data.user);
+                this.$store.commit('SET_USER_INFO', resp.data);
 
                 if (this.$route.query && this.$route.query.next && this.$route.query.next !== '') {
                   this.$router.push({path: this.$route.query.next})

@@ -7,10 +7,8 @@ export default [
     redirect: '/',
     meta: {
       roles: [
-        'admin',
-        'owner',
-        'collector',
-        'operator'
+        'manager',
+        'user'
       ]
     },
     component: resolve => require(['Views/index'], resolve),
@@ -20,10 +18,8 @@ export default [
       component: resolve => require(['Views/Home'], resolve),
       meta: {
         roles: [
-          'admin',
-          'owner',
-          'collector',
-          'operator'
+          'manager',
+          'user'
         ]
       },
     },]
@@ -39,10 +35,8 @@ export default [
     component: resolve => require(['Views/index'], resolve),
     meta: {
       roles: [
-        'admin',
-        'owner',
-        'collector',
-        'operator'
+        'manager',
+        'user'
       ],
     },
     children: [
@@ -53,10 +47,8 @@ export default [
         component: resolve => require(['Views/MyInfo/MyInfo'], resolve),
         meta: {
           roles: [
-            'admin',
-            'owner',
-            'collector',
-            'operator'
+            'manager',
+            'user'
           ]
         }
       },
@@ -71,14 +63,8 @@ export default [
       visible: true,
       roles: [
 
-        'admin',
-
-        'owner',
-
-        'operator',
-
-        'collector',
-
+        'manager',
+        'user'
       ]
     },
     icon: "icon-tudi",
@@ -90,13 +76,8 @@ export default [
         visible: false,
         roles: [
 
-          'admin',
-
-          'owner',
-
-          'operator',
-
-          'collector',
+          'manager',
+          'user'
 
         ]
       }
@@ -109,13 +90,8 @@ export default [
           visible: false,
           roles: [
 
-            'admin',
-
-            'owner',
-
-            'operator',
-
-            'collector',
+            'manager',
+            'user'
 
           ]
         }

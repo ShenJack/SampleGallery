@@ -3,8 +3,8 @@
     <slot></slot>
     <Menu style="min-height: 100%;height: auto" ref="menu" v-show="!collapsed" :active-name="activeName" :open-names="openedNames" :accordion="accordion" :theme="theme" width="auto" @on-select="handleSelect">
       <template v-for="item in menuList">
-        <side-menu-item @on-click="handleSelect" v-if="showChildren(item) && hasPermission($store.state.userInfo.role_names,item.meta.roles)" :key="`menu-${item.name}`" :parent-item="item"></side-menu-item>
-        <menu-item v-else-if="item.name && hasPermission($store.state.userInfo.role_names,item.meta.roles)" :name="`${item.name}`" :key="`menu-${item.name}`"><i class="iconfont" :class="item.icon"/><span>{{ showTitle(item) }}</span></menu-item>
+        <side-menu-item @on-click="handleSelect" v-if="showChildren(item) && hasPermission($store.state.userInfo.groups,item.meta.roles)" :key="`menu-${item.name}`" :parent-item="item"></side-menu-item>
+        <menu-item v-else-if="item.name && hasPermission($store.state.userInfo.groups,item.meta.roles)" :name="`${item.name}`" :key="`menu-${item.name}`"><i class="iconfont" :class="item.icon"/><span>{{ showTitle(item) }}</span></menu-item>
       </template>
     </Menu>
     <div class="menu-collapsed" v-show="collapsed" :list="menuList">

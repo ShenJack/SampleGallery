@@ -1,4 +1,5 @@
-from django.contrib.auth.models import User
+import django_filters
+from django.contrib.auth.models import User, Group
 from rest_framework import permissions, serializers, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -15,21 +16,20 @@ class SampleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sample
         fields = (
+            'id',
             'name',
             'description',
             'uploader',
-            'uploadTime',
-            'reviewedTime',
-            'passTime',
             'reviewed',
-            'reviewState',)
+            'reviewState',
+        )
 
 
 class SampleViewSet(viewsets.ModelViewSet):
     queryset = Sample.objects.all()
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = SampleSerializer
-
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend,)
 
 # Routers provide an easy way of automatically determining the URL conf.
 
@@ -37,16 +37,19 @@ class SampleViewSet(viewsets.ModelViewSet):
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     samples = SampleSerializer(many=True, read_only=True)
-
+    groups = StringRelatedField(many=True)
     class Meta:
         model = User
-        fields = ('url', 'username', 'email', 'is_staff', 'samples', 'password')
+        fields = ('url', 'username', 'email', 'is_staff', 'samples', 'password','groups')
 
     def create(self, validated_data):
         user = super(UserSerializer, self).create(validated_data)
         user.set_password(validated_data['password'])
+        user.groups.add(Group.objects.get(id=1))
         user.save()
         return user
+
+
 
 
 # ViewSets define the view behavior.
@@ -58,11 +61,17 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    @action(detail=False, methods=['get'])
+    def currentUser(self,request):
+        serializer = UserSerializer(request.user, context={'request': request})
+        return Response(serializer.data)
+
+
     def get_permissions(self):
         """
         Instantiates and returns the list of permissions that this view requires.
         """
-        if self.action in ['currentUser', 'create']:
+        if self.action in ['currentUser', 'create','list']:
             permission_classes = []
         else:
             permission_classes = [permissions.IsAdminUser]

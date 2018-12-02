@@ -26,7 +26,6 @@ router.register(r'samples', SampleViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls')),
-    path('api-token-auth/', views.obtain_auth_token)
+    path('admin', admin.site.urls),
+    path('login', views.obtain_auth_token),
 ]

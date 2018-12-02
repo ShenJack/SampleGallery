@@ -1,6 +1,6 @@
 // see http://vuejs-templates.github.io/webpack for documentation.
 var path = require('path')
-var server = "http://47.92.110.74:8084/";
+var server = "http://localhost:8000/";
 module.exports = {
   build: {
     env: require('./prod.env'),
@@ -45,7 +45,7 @@ module.exports = {
         target: server, // 接口的域名
         secure: false,  // 如果是https接口，需要配置这个参数
         changeOrigin: true, // 如果接口跨域，需要进行这个参数配置
-        // pathRewrite: {"^/api" : ""},
+        pathRewrite: {"^/api" : ""},
       },
       '/login': {
         target: server, // 接口的域名
@@ -57,7 +57,7 @@ module.exports = {
         target: server, // 接口的域名
         secure: false,  // 如果是https接口，需要配置这个参数
         changeOrigin: true, // 如果接口跨域，需要进行这个参数配置
-        // pathRewrite: {"^/api" : ""},
+        pathRewrite: {"^/auth" : ""},
       },
     },
     // CSS Sourcemaps off by default because relative paths are "buggy"

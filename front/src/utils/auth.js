@@ -8,12 +8,12 @@ export function getToken() {
 
 
 export function hasPermission(roles, permissionRoles) {
-  if (roles.indexOf('admin') >= 0) return true // admin permission passed directly
+  if (roles.indexOf('manager') >= 0) return true // admin permission passed directly
   if (!permissionRoles) return true
   return roles.some(role => permissionRoles.indexOf(role) >= 0)
 }
 
 export function setToken(token) {
-  axios.defaults.headers.common[TokenKey] = "Bearer " + token;
+  axios.defaults.headers.common[TokenKey] = "Token " + token;
 }
 
