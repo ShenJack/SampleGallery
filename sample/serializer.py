@@ -2,17 +2,29 @@ import django_filters
 from django.contrib.auth.models import User, Group
 from rest_framework import permissions, serializers, viewsets, status
 from rest_framework.decorators import action
+from rest_framework.fields import ReadOnlyField
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.relations import StringRelatedField
 from rest_framework.response import Response
 
-from sample.models import Sample
-from sample.permissions import IsOwnerOrReadOnly
+from sample.models import Sample, IMG
+
+
+class ImgSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IMG
+        fields = (
+            'id',
+            'path',
+            'name',
+        )
 
 
 class SampleSerializer(serializers.ModelSerializer):
     uploader = StringRelatedField(many=False)
+    pics = ImgSerializer(many=True)
+
     class Meta:
         model = Sample
         fields = (
@@ -22,81 +34,46 @@ class SampleSerializer(serializers.ModelSerializer):
             'uploader',
             'reviewed',
             'reviewState',
+            'pics'
         )
 
-
-class SampleViewSet(viewsets.ModelViewSet):
-    queryset = Sample.objects.all()
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = SampleSerializer
-    filter_backends = (django_filters.rest_framework.DjangoFilterBackend,)
-
-# Routers provide an easy way of automatically determining the URL conf.
+    def create(self, validated_data):
+        pics = validated_data.pop('pics')
+        sample = Sample.objects.create(**validated_data)
+        for pic in pics:
+            img = IMG.objects.get(id=pic['name'])
+            img.sample = sample
+            img.save()
+        sample.save()
+        return sample
 
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     samples = SampleSerializer(many=True, read_only=True)
-    groups = StringRelatedField(many=True)
+    groups = serializers.StringRelatedField(many=True, read_only=True)
+    is_staff = serializers.StringRelatedField(many=False, read_only=True)
+
     class Meta:
         model = User
-        fields = ('url', 'username', 'email', 'is_staff', 'samples', 'password','groups')
+        fields = ('username', 'email', 'is_staff', 'samples', 'password', 'groups')
 
     def create(self, validated_data):
         user = super(UserSerializer, self).create(validated_data)
         user.set_password(validated_data['password'])
-        user.groups.add(Group.objects.get(id=1))
+        user.groups.add(Group.objects.get(id=2))
         user.save()
         return user
 
-
-
-
-# ViewSets define the view behavior.
-class PasswordSerializer(serializers.Serializer):
-    pass
-
-
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-    @action(detail=False, methods=['get'])
-    def currentUser(self,request):
-        serializer = UserSerializer(request.user, context={'request': request})
-        return Response(serializer.data)
-
-
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ['currentUser', 'create','list']:
-            permission_classes = []
-        else:
-            permission_classes = [permissions.IsAdminUser]
-        return [permission() for permission in permission_classes]
-
-    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAdminUser])
-    def listUser(self, request):
-        queryset = User.objects.all()
-        serializer = UserSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def retrieve(self, request, pk=None):
-        queryset = User.objects.all()
-        user = get_object_or_404(queryset, pk=pk)
-        serializer = UserSerializer(user, context={'request': request})
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['post'])
-    def set_password(self, request, pk=None):
-        user = self.get_object()
-        serializer = PasswordSerializer(data=request.data)
-        if serializer.is_valid():
-            user.set_password(serializer.data['password'])
-            user.save()
-            return Response({'status': 'password set'})
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+# class CreateUserSerializer(serializers.ModelSerializer):
+#     password = serializers.CharField(write_only=True)
+#     class Meta:
+#         model = User
+#         fields = ('username', 'email','password')
+#
+#     def create(self, validated_data):
+#         user = super(CreateUserSerializer, self).create(validated_data)
+#         user.set_password(validated_data['password'])
+#         user.groups.add(Group.objects.get(id=2))
+#         user.save()
+#         return user

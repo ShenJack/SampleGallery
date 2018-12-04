@@ -42,6 +42,10 @@ export const currentUser = (params) => {
   return axios.get('/auth/users/currentUser/')
 };
 
-export const editUser = (params)=>{
-  return axios.post('/auth/users/')
+export const editUser = (id,params)=>{
+  return axios.post('/auth/users/' + id,params)
+}
+
+export const registerUser = (params)=>{
+  return axios.post('/auth/users/',params)
 }

@@ -45,7 +45,7 @@ module.exports = {
         target: server, // 接口的域名
         secure: false,  // 如果是https接口，需要配置这个参数
         changeOrigin: true, // 如果接口跨域，需要进行这个参数配置
-        pathRewrite: {"^/api" : ""},
+        pathRewrite: {"^/api": ""},
       },
       '/login': {
         target: server, // 接口的域名
@@ -57,7 +57,18 @@ module.exports = {
         target: server, // 接口的域名
         secure: false,  // 如果是https接口，需要配置这个参数
         changeOrigin: true, // 如果接口跨域，需要进行这个参数配置
-        pathRewrite: {"^/auth" : ""},
+        pathRewrite: {"^/auth": ""},
+      },
+      '/upload': {
+        target: server, // 接口的域名
+        secure: false,  // 如果是https接口，需要配置这个参数
+        changeOrigin: true, // 如果接口跨域，需要进行这个参数配置
+        pathRewrite: {"^/upload": ""},
+      },
+      '/static/img': {
+        target: server, // 接口的域名
+        secure: false,  // 如果是https接口，需要配置这个参数
+        changeOrigin: true, // 如果接口跨域，需要进行这个参数配置
       },
     },
     // CSS Sourcemaps off by default because relative paths are "buggy"

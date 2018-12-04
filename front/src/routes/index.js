@@ -55,7 +55,7 @@ export default [
     ]
   },
   {
-    name: "样本",
+    name: "样本库",
     path: "/sample",
     component: resolve => require(['Views/index'], resolve),
     redirect: "/sample",

@@ -3,7 +3,7 @@
           class="layout-header-bar">
     <Row>
       <Col :span="3" style="min-width: 200px">
-          <span style="font-size: 30px;margin-left: 24px;color: #eeeeee;"><i class="iconfont icon-feiliao" style="font-size: 23px;"/>样本空间</span>
+          <span style="font-size: 30px;margin-left: 24px;color: #eeeeee;">菌落样本博物馆</span>
       </Col>
       <Col v-if="!login" :span="3" style="min-width: 230px;margin-left: 10px">
         <breadcrumb style="color:white;"/>
@@ -42,7 +42,7 @@
   }
 
   .layout-header-bar {
-    background: rgba(68, 75, 88, 0.82);
+    background: rgba(97, 118, 116, 0.82);
     color: #DEDEDE;
     box-shadow: 0 1px 1px rgba(0, 0, 0, .1);
   }

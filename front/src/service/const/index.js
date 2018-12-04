@@ -27,7 +27,10 @@ const CONST = {
   formula:'配方',
   kind:'种类',
   shop:'店铺',
-  elements:'元素  '
+  elements:'元素',
+  NR:"待审核",
+  RJ:"审核未通过",
+  PS:"审核通过",
 };
 
 const shop_status = [{

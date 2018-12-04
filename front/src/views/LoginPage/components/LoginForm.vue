@@ -16,6 +16,7 @@
     </FormItem>
     <FormItem>
       <Button @click="handleSubmit" type="primary" long>登录</Button>
+
     </FormItem>
   </Form>
 </template>
@@ -38,7 +39,8 @@
             { required: true, message: '密码不能为空', trigger: 'blur' }
           ]
         }
-      }
+      },
+      username:String,
     },
     data () {
       return {
@@ -46,6 +48,11 @@
           userName: 'shenjack',
           password: ''
         }
+      }
+    },
+    mounted(){
+      if(this.username){
+        this.userName = this.username;
       }
     },
     computed: {
@@ -66,7 +73,8 @@
             })
           }
         })
-      }
+      },
+
     }
   }
 </script>

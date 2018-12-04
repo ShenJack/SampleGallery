@@ -13,19 +13,29 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf.urls.static import static
 from django.contrib import admin
 
 from django.urls import path, include
 from rest_framework import routers, serializers, viewsets
 from rest_framework import authtoken
-from sample.serializer import SampleViewSet, UserViewSet
-from rest_framework.authtoken import views
+from rest_framework.authtoken.views import obtain_auth_token
+from rest_framework.urlpatterns import format_suffix_patterns
+
+from SampleGallery import settings
+from sample import views
+from sample.views import upload_file
+
 router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
-router.register(r'samples', SampleViewSet)
+router.register(r'users', views.UserViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('samples/', views.SampleList.as_view()),
+    path('samples/<int:pk>/', views.SampleDetail.as_view()),
     path('admin', admin.site.urls),
-    path('login', views.obtain_auth_token),
+    path('login', obtain_auth_token),
+    path('image', upload_file),
 ]
+urlpatterns = format_suffix_patterns(urlpatterns)
+
+urlpatterns+=path('', include(router.urls)),

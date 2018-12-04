@@ -7,9 +7,14 @@
     <myheader :login="true"></myheader>
     <div class="login">
       <div class="login-con">
-        <Card icon="log-in" title="欢迎登录" :bordered="false">
-          <div class="form-con">
-            <login-form @on-success-valid="handleSubmit"></login-form>
+        <Card icon="log-in" :title="login?'欢迎登录':'欢迎注册'" shadow :bordered="true">
+          <div class="form-con" >
+            <transition name="slide-fade">
+            <login-form :username="providedUsername" v-if="login" @on-success-valid="handleLogin"></login-form>
+            <RegistrationForm v-else @on-success-valid="handleRegistry"></RegistrationForm>
+            </transition>
+            <Button @click="login = false" type="text" long v-if="login">注册</Button>
+            <Button @click="login = true" type="text" long v-if="!login">返回登录</Button>
           </div>
         </Card>
       </div>
@@ -18,7 +23,8 @@
 </template>
 <script>
   import LoginForm from './components/LoginForm'
-  import {loginUser} from '../../service/api/user'
+  import RegistrationForm from './components/RegistrationForm'
+  import {loginUser,registerUser} from '../../service/api/user'
   import {hasPermission} from "Utils/auth";
   import {manage_routes} from "Routes";
   import {currentUser} from "Api/user";
@@ -27,7 +33,7 @@
 
   export default {
     components: {
-      LoginForm, navigator, myheader
+      LoginForm, navigator, myheader,RegistrationForm
     },
 
     computed: {
@@ -35,10 +41,16 @@
         return this.$store.state.userInfo
       }
     },
+    data(){
+      return {
+        login:true,
+        providedUsername:"",
+      }
+  },
     methods: {
       setToken,
 
-      handleSubmit({userName, password}) {
+      handleLogin({userName, password}) {
         loginUser({
           "username": userName,
           "password": password
@@ -65,6 +77,18 @@
 
         })
       },
+      handleRegistry(params){
+        registerUser(params).then(resp=>{
+          this.$Message.success('注册成功');
+          this.providedUsername = resp.data.username;
+          this.login = true
+
+        }).catch(error=>{
+          if(error.response.status === 400){
+            this.$Message.error('用户名已存在');
+          }
+        })
+      }
 
 
     },
