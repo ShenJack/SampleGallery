@@ -4,7 +4,7 @@
       <Avatar icon="ios-person"/>
     </div>
     <Dropdown v-show="!login" @on-click="handleClick">
-      <span style="margin-right: 3px">{{ $store.state.userInfo.name}}</span>
+      <span style="margin-right: 3px">{{ $store.state.userInfo.name}} <tag>{{ $store.state.userInfo.groups[0]}}</tag></span>
       <Icon :size="18" type="md-arrow-dropdown"></Icon>
       <DropdownMenu slot="list">
         <DropdownItem name="logout">退出登录</DropdownItem>

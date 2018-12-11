@@ -12,12 +12,13 @@ from sample.models import Sample, IMG
 
 
 class ImgSerializer(serializers.ModelSerializer):
+    id = serializers.CharField()
+    path = serializers.ReadOnlyField()
     class Meta:
         model = IMG
         fields = (
             'id',
             'path',
-            'name',
         )
 
 
@@ -37,15 +38,30 @@ class SampleSerializer(serializers.ModelSerializer):
             'pics'
         )
 
+
+
     def create(self, validated_data):
         pics = validated_data.pop('pics')
         sample = Sample.objects.create(**validated_data)
         for pic in pics:
-            img = IMG.objects.get(id=pic['name'])
+            img = IMG.objects.get(id=pic['id'])
             img.sample = sample
             img.save()
         sample.save()
         return sample
+
+    def update(self, instance, validated_data):
+        pics = validated_data.pop('pics')
+        instance.pics.all().update(sample = Sample.objects.get(id=1))
+        for pic in pics:
+            img = IMG.objects.get(id=pic['id'])
+            instance.pics.add(img)
+        instance.update(**validated_data)
+        return instance
+
+
+
+
 
 
 class UserSerializer(serializers.ModelSerializer):

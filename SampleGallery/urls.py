@@ -28,6 +28,7 @@ from sample.views import upload_file
 
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
+router.register(r'samples', views.SampleViewSet)
 
 urlpatterns = [
     path('samples/', views.SampleList.as_view()),

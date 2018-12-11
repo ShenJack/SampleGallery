@@ -55,14 +55,13 @@ export default [
     ]
   },
   {
-    name: "样本库",
+    name: "样本馆",
     path: "/sample",
     component: resolve => require(['Views/index'], resolve),
     redirect: "/sample",
     meta: {
       visible: true,
       roles: [
-
         'manager',
         'user'
       ]
@@ -92,6 +91,83 @@ export default [
 
             'manager',
             'user'
+
+          ]
+        }
+      }
+    ]
+  },{
+    name: "我的上传",
+    path: "/my_sample",
+    component: resolve => require(['Views/index'], resolve),
+    redirect: "/my_sample",
+    meta: {
+      visible: true,
+      roles: [
+        'user'
+      ]
+    },
+    icon: "icon-tudi",
+    children: [{
+      name: "样本列表",
+      path: "", // xzl
+      component: resolve => require(['Views/sample/sampleList'], resolve),
+      meta: {
+        visible: false,
+        roles: [
+          'user'
+
+        ]
+      }
+    },
+      {
+        name: "样本详情",
+        path: ":id", // xzl
+        component: resolve => require(['Views/sample/sampleDetail'], resolve),
+        meta: {
+          visible: false,
+          roles: [
+            'user'
+
+          ]
+        }
+      }
+    ]
+  },
+  {
+    name: "审核",
+    path: "/review",
+    component: resolve => require(['Views/index'], resolve),
+    redirect: "/review",
+    meta: {
+      visible: true,
+      roles: [
+        'manager',
+      ]
+    },
+    icon: "icon-tudi",
+    children: [{
+      name: "样本列表",
+      path: "", // xzl
+      component: resolve => require(['Views/sample/sampleList'], resolve),
+      meta: {
+        visible: false,
+        roles: [
+
+          'manager',
+
+        ]
+      }
+    },
+      {
+        name: "样本详情",
+        path: ":id", // xzl
+        component: resolve => require(['Views/sample/sampleDetail'], resolve),
+        meta: {
+          visible: false,
+          roles: [
+
+            'manager',
 
           ]
         }

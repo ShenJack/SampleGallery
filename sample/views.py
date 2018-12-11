@@ -22,7 +22,6 @@ from sample.serializer import UserSerializer, SampleSerializer
 # class UserList(generics.ListAPIView):
 
 
-
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -89,11 +88,43 @@ class SampleDetail(RetrieveUpdateAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class SampleViewSet(viewsets.ViewSet):
+    queryset = User.objects.all()
+    serializer_class = SampleSerializer
+    filter_backends = (DjangoFilterBackend,)
+
+    @action(detail=True, methods=['get'])
+    def passed(self, request, pk=1):
+        try:
+            sample = Sample.objects.get(pk=pk)
+            sample.reviewed = True
+            sample.reviewState = Sample.STATE_PASSED
+            sample.save()
+            serializer = SampleSerializer(sample, context={'request': request})
+            return Response(serializer.data)
+        except Sample.DoesNotExist as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['get'])
+    def reject(self, request, pk=1):
+        try:
+            sample = Sample.objects.get(pk=pk)
+            sample.reviewed = True
+            sample.reviewState = Sample.STATE_REJECTED
+            sample.save()
+            serializer = SampleSerializer(sample, context={'request': request})
+            return Response(serializer.data)
+        except Sample.DoesNotExist as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+# class SampleViewSet(viewsets.GenericViewSet):
+
+
 def upload_file(request):
     if request.method == 'POST':
         new_img = IMG(
             img=request.FILES.get("file"),
-            name=datetime.datetime.now().__str__() + request.FILES.get('file').name
         )
         new_img.save()
         return JsonResponse({"path": '/' + new_img.img.name, "id": new_img.id})
