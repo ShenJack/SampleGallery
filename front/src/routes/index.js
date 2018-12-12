@@ -70,7 +70,7 @@ export default [
     children: [{
       name: "样本列表",
       path: "", // xzl
-      component: resolve => require(['Views/sample/sampleList'], resolve),
+      component: resolve => require(['Views/sample/sampleFlow'], resolve),
       meta: {
         visible: false,
         roles: [
@@ -88,15 +88,14 @@ export default [
         meta: {
           visible: false,
           roles: [
-
             'manager',
             'user'
-
           ]
         }
       }
     ]
-  },{
+  }
+  ,{
     name: "我的上传",
     path: "/my_sample",
     component: resolve => require(['Views/index'], resolve),
@@ -120,18 +119,6 @@ export default [
         ]
       }
     },
-      {
-        name: "样本详情",
-        path: ":id", // xzl
-        component: resolve => require(['Views/sample/sampleDetail'], resolve),
-        meta: {
-          visible: false,
-          roles: [
-            'user'
-
-          ]
-        }
-      }
     ]
   },
   {
@@ -159,19 +146,7 @@ export default [
         ]
       }
     },
-      {
-        name: "样本详情",
-        path: ":id", // xzl
-        component: resolve => require(['Views/sample/sampleDetail'], resolve),
-        meta: {
-          visible: false,
-          roles: [
 
-            'manager',
-
-          ]
-        }
-      }
     ]
   }
 ]
