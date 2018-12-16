@@ -19,10 +19,11 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers, serializers, viewsets
 from rest_framework import authtoken
-from rest_framework.authtoken.views import obtain_auth_token
+from rest_framework.authtoken.views import obtain_auth_token, ObtainAuthToken
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from SampleGallery import settings
+from SampleGallery.auth import CustomAuthToken
 from sample import views
 from sample.views import upload_file
 
@@ -34,7 +35,7 @@ urlpatterns = [
     path('samples/', views.SampleList.as_view()),
     path('samples/<int:pk>/', views.SampleDetail.as_view()),
     path('admin', admin.site.urls),
-    path('login', obtain_auth_token),
+    path('login', CustomAuthToken.as_view()),
     path('image', upload_file),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

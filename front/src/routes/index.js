@@ -122,7 +122,7 @@ export default [
     ]
   },
   {
-    name: "审核",
+    name: "样本管理",
     path: "/review",
     component: resolve => require(['Views/index'], resolve),
     redirect: "/review",

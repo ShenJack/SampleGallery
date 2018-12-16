@@ -39,7 +39,7 @@ class SampleList(ListAPIView):
     """
 
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('id', 'name', 'description')
+    filter_fields = ('id', 'name', 'description','reviewed')
     serializer_class = SampleSerializer
     queryset = Sample.objects.all()
 

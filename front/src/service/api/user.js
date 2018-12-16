@@ -49,3 +49,8 @@ export const editUser = (id,params)=>{
 export const registerUser = (params)=>{
   return axios.post('/auth/users/',params)
 }
+
+
+export const getUsers = (params = {})=>{
+  return axios.get('/auth/users/',{params:params})
+}

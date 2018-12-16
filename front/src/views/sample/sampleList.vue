@@ -5,27 +5,50 @@
 
 
         <FormItem class="search-item" label="名称">
-          <Input class="search-item-input" v-model="searchObject.name"
+          <Input @on-change="change" class="search-item-input" v-model="searchObject.name"
                  placeholder="请输入" clearable></Input>
         </FormItem>
 
 
         <FormItem class="search-item" label="描述">
-          <Input class="search-item-input" v-model="searchObject.description"
+          <Input @on-change="change" class="search-item-input" v-model="searchObject.description"
                  placeholder="请输入" clearable></Input>
         </FormItem>
 
 
         <FormItem class="search-item" label="上传自">
-          <Input class="search-item-input" v-model="searchObject.uploader"
-                 placeholder="请输入" clearable></Input>
+          <Select @on-change="change"
+                  class="search-item-input"
+                  v-model="searchObject.uploader"
+          >
+            <Option v-for="item in uploaderList" :value="item.key"
+                    :key="item.id"
+            >
+              {{item.name}}
+            </Option>
+          </Select>
+        </FormItem>
+        <FormItem class="search-item" label="未审核" prop="description">
+          <Select @on-change="change"
+                  class="search-item-input"
+                  v-model="searchObject.reviewed"
+          >
+            <Option v-for="item in reviewedSelect" :value="item.key"
+                    :key="item.value"
+                    :label="item.value"
+            >
+              {{item.value}}
+            </Option>
+          </Select>
         </FormItem>
 
 
         <FormItem class="search-item">
-          <Button id="search-button" @click="search" type="primary">查询</Button>
+          <Button id="search-button" @click="fetchData" type="primary">查询</Button>
           <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
         </FormItem>
+
+
       </Form>
 
     </div>
@@ -50,7 +73,7 @@
 </template>
 <script>
   import addDialog from "./addDialog"
-  import {getName,getState} from "Const"
+  import {getName, getState} from "Const"
   import {
     getSamples,
     deleteSample,
@@ -58,6 +81,8 @@
     addSample
   } from "Api/sample"
   import {getColor} from "../../service/const";
+  import {reviewedSelect} from "../../service/const/select";
+  import {getUsers} from "../../service/api/user";
 
 
   export default {
@@ -71,12 +96,15 @@
     },
     data() {
       return {
+        reviewedSelect: reviewedSelect,
         itemCount: 0,
         currentPage: 1,
         showEdit: false,
         showAdd: false,
         editingId: "",
         searchObject: {
+
+          reviewed: undefined,
 
           id: "",
 
@@ -91,6 +119,7 @@
 
 
         },
+        uploaderList: [],
         loading: false,
 
         columns: [
@@ -129,7 +158,7 @@
             title: "审核状态",
             key: "reviewState",
             render: (h, params) => {
-              return h("div", [h("p",{style:{color:getColor(params.row.reviewState)}} ,getName(params.row.reviewState))]);
+              return h("div", [h("p", {style: {color: getColor(params.row.reviewState)}}, getName(params.row.reviewState))]);
             }
           },
           {
@@ -223,18 +252,7 @@
         Object.keys(this.searchObject).forEach((key) => {
           this.searchObject[key] = "";
         });
-        this.search();
-      }
-      ,
-      search() {
-        let args = {...this.searchObject, ...this.pages};
-        getSamples(args).then((response) => {
-          this.data = response.data.results;
-        })
-      }
-      ,
-      refresh() {
-        this.search();
+        this.fetchData();
       }
       ,
       fetchData() {
@@ -245,6 +263,9 @@
         })
       }
       ,
+      change() {
+        this.fetchData();
+      },
       addOk(data) {
         this.showAdd = false;
         addSample(data).then((response) => {
@@ -261,9 +282,16 @@
       }
       ,
       fetchSelect() {
-
+        this.getUploaderList();
       }
       ,
+
+      getUploaderList(name) {
+        let params = {name:name};
+        getUsers(params).then(resp=>{
+          this.uploaderList = resp.data.results;
+        })
+      },
 
 
       changePage(page) {

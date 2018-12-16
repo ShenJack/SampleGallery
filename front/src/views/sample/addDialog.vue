@@ -29,12 +29,14 @@
         </FormItem>
       </div>
 
+
+
       <div class="form-level">
         <FormItem label="图片">
           <div style="    display: flex; width: 300px; height: 150px; flex-wrap: wrap;">
             <div class="demo-upload-list" v-for="item in uploadList">
               <template v-if="item.status === 'finished'">
-                <img width="58" height="58" :src="item.url">
+                <img style="object-fit: cover" width="58" height="58" :src="item.url">
                 <div class="demo-upload-list-cover">
                   <Icon type="ios-eye-outline" @click.native="handleView(item)"></Icon>
                   <Icon type="ios-trash-outline" @click.native="handleRemove(item)"></Icon>

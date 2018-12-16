@@ -87,6 +87,9 @@ export function responseFailFunc(responseError) {
         router.push({path: "/login"});
       }
       break;
+    case 400:
+      window.vbus.$emit('global.message.error', responseError.response.data.error);
+      break;
     default:
       CONSOLE_REQUEST_ENABLE && console.info('requestInterceptorFunc', `url: ${responseError.url}`, responseError)
       window.vbus.$emit('global.message.error', "系统异常");

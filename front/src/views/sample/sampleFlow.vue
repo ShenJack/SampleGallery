@@ -44,8 +44,6 @@
         })
       },
       clickFn(event, { index, value }) {
-        debugger
-
         this.$router.push({
           name: "样本详情",
           params: {id: value.id}})

@@ -18,7 +18,7 @@
 
 <script>
   import {logoutUser} from '../../service/api/user'
-  import {setToken} from "../../utils/auth";
+  import {clearToken, setToken} from "../../utils/auth";
   import Notice from "Notice"
 
   export default {
@@ -31,7 +31,7 @@
       handleClick(name) {
         switch (name) {
           case 'logout':
-            setToken('');
+            clearToken();
             this.$router.push({path: '/login', query: {manual: true}});
             Notice.Info('请重新登录');
             break

@@ -27,10 +27,10 @@
                 type="primary">保存
         </Button>
 
-        <Button type="error" @click="reject" class="save-button"
+        <Button v-if="!srcData.reviewed" type="error" @click="reject" class="save-button"
         >拒绝
         </Button>
-        <Button @click="pass" class="save-button"
+        <Button v-if="!srcData.reviewed" @click="pass" class="save-button"
                 type="primary">通过
         </Button>
 
@@ -86,7 +86,7 @@
             <div style="    display: flex; flex-wrap: wrap;">
               <div class="demo-upload-list" v-for="item in uploadList">
                 <template v-if="item.status === 'finished'">
-                  <img width="100" height="100" :src="item.url">
+                  <img width="100" height="100" :src="item.url" style="object-fit: cover">
                   <div class="demo-upload-list-cover">
                     <Icon type="ios-eye-outline" @click.native="handleView(item)"></Icon>
                     <Icon type="ios-trash-outline" @click.native="handleRemove(item)"></Icon>

@@ -1,5 +1,3 @@
-import {getShops} from 'Api/shop'
-import {getCrops} from 'Api/crop'
 
 export const getSelectFor = (childName) => {
   console.log("asd");
@@ -42,3 +40,18 @@ export const getSelectFor = (childName) => {
       });
   }
 };
+
+export const reviewedSelect = [
+  {
+    key:"true",
+    value:"已审核"
+  },
+  {
+    key:"",
+    value:"全部"
+  },
+  {
+    key:"false",
+    value:"未审核"
+  }
+]

@@ -111,7 +111,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'sample.pagination.StandardResultsSetPagination',
-    'PAGE_SIZE': 20
+    'PAGE_SIZE': 20,
+    'EXCEPTION_HANDLER': 'SampleGallery.exception.custom_exception_handler',
 }
 
 # AUTH_USER_MODEL = 'sam'
