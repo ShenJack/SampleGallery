@@ -1,9 +1,10 @@
 <template lang="pug">
   vue-waterfall-easy(ref="waterfall",:imgsArr="imgsArr",@scrollReachBottom="getData", @click="clickFn")
-    .img-info(slot-scope="props")
-      p.some-info {{props.value.name}}
-      p.some-info {{props.value.info}}
-
+    div.detail(slot-scope="props")
+      h3.title {{props.value.name}}
+      p.name 沈季康
+      div.avatar
+        Avatar(:src='props.value.icon')
     //-div(slot="waterfall-head")
       h1 waterfall-head
       h1 waterfall-head
@@ -60,10 +61,26 @@
   }
 </script>
 <style lang="scss">
-  .some-info {
-    line-height: 1.6;
+  .title {
+    height: 100%;
+    width: 204px;
     text-align: center;
-    color: #474b4e;
-    font-size: larger;
+    margin-top: 15px;
+    color: #44484b;
+  }
+  .avatar{
+    margin-top: 15px;
+    margin-right: 10px;
+
+  }
+  .detail{
+    height: 60px;
+    display: flex;
+    .name{
+      margin-top: 21px;
+      width: 60px;
+      font-size: smaller;
+      color: #6b6b6e;
+    }
   }
 </style>

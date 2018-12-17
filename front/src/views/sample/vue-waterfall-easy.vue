@@ -113,7 +113,7 @@
     .dot(v-if="!hasLoadingSlot", v-for="n in loadingDotCount",:style="loadingDotStyle")
   //- 为了防止loading 跟随滚动
   .vue-waterfall-easy-scroll(ref="scrollEl")
-    slot(name="waterfall-head")
+    slowt(name="waterfall-head")
     .vue-waterfall-easy(:style="isMobile? '' :{width: colWidth*cols+'px',left:'50%', marginLeft: -1*colWidth*cols/2 +'px'}")
       .img-box(
         v-for="(v,i) in imgsArr_c",

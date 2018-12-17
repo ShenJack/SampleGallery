@@ -69,10 +69,10 @@ class UserSerializer(serializers.ModelSerializer):
     samples = SampleSerializer(many=True, read_only=True)
     groups = serializers.StringRelatedField(many=True, read_only=True)
     is_staff = serializers.StringRelatedField(many=False, read_only=True)
-
+    id = serializers.ReadOnlyField()
     class Meta:
         model = User
-        fields = ('username', 'email', 'is_staff', 'samples', 'password', 'groups','first_name')
+        fields = ('id','username', 'email', 'is_staff', 'samples', 'password', 'groups','first_name')
 
     def create(self, validated_data):
         user = super(UserSerializer, self).create(validated_data)

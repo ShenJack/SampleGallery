@@ -132,21 +132,21 @@
     </div>
 
 
-    <div class="table children-table">
-      <Divider
-        orientation="left">店铺
+    <!--<div class="table children-table">-->
+      <!--<Divider-->
+        <!--orientation="left">店铺-->
 
-        <Icon type="ios-arrow-forward"/>
-        {{shop.srcData.name}}
-        <Button @click="this.shop.goto" style="margin:0 0 2px 10px">
-          <Icon type="md-arrow-forward"></Icon>
-        </Button>
-      </Divider>
+        <!--<Icon type="ios-arrow-forward"/>-->
+        <!--{{shop.srcData.name}}-->
+        <!--<Button @click="this.shop.goto" style="margin:0 0 2px 10px">-->
+          <!--<Icon type="md-arrow-forward"></Icon>-->
+        <!--</Button>-->
+      <!--</Divider>-->
 
-      <Table class="tableContent" :columns=shop.columns :data=shop.data
-             :show-header=shop.showHeader></Table>
+      <!--<Table class="tableContent" :columns=shop.columns :data=shop.data-->
+             <!--:show-header=shop.showHeader></Table>-->
 
-    </div>
+    <!--</div>-->
 
 
     <br>
@@ -312,46 +312,19 @@
 
       fetchSelect() {
 
-
-        this.role_namesSelect = getRole_namesSelect();
-
-
-        this.loadingCount++;
-        getShops().then((resp) => {
-          let list = [];
-          resp.data.shops.forEach((item) => {
-            list.push({
-              "id": item.id,
-              "name": item.name
-            })
-          });
-          if (!list.find(item => item.id === this.srcData.shop.id)) {
-            list.push({
-              "id": this.srcData.shop.id,
-              "name": this.srcData.shop.name
-            })
-          }
-          this.shop_idSelect = list;
-          this.loadingCount--;
-
-        });
-
-
       },
 
       fetchData() {
         currentUser().then((response) => {
-          let remoteData = response.data.user;
-          this.srcData = response.data.user;
-          this.id = response.data.user.id;
-          this.shop.data = [];
-          this.shop.srcData = remoteData.shop;
-          Object.keys(remoteData.shop).forEach((key) => {
-            this.shop.data.push({
-              key: key,
-              value: remoteData.shop[key]
-            })
-          });
+          let remoteData = response.data;
+          this.srcData = response.data;
+          this.id = response.data.id;
+          // Object.keys(remoteData.shop).forEach((key) => {
+          //   this.shop.data.push({
+          //     key: key,
+          //     value: remoteData.shop[key]
+          //   })
+          // });
           this.fetchSelect();
         })
       },

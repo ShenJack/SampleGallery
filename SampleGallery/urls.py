@@ -40,4 +40,4 @@ urlpatterns = [
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
 
-urlpatterns+=path('', include(router.urls)),
+urlpatterns += path('', include(router.urls)),
