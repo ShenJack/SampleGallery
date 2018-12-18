@@ -30,11 +30,11 @@ class CustomAuthTokenSerializer(serializers.Serializer):
     )
 
     def validate(self, attrs):
-        username = attrs.get('username')
-        password = attrs.get('password')
+        username = attrs.get('username', )
+        password = attrs.get('password', )
 
         if username and password:
-            user = authenticate(request=self.context.get('request'),
+            user = authenticate(request=self.context.get('request', ),
                                 username=username, password=password)
 
             # The authenticate call simply returns None for is_active=False

@@ -2,17 +2,7 @@
   <div>
     <div class="table" id="detail-table">
       <Row>
-        <p class="tableName">用户
-          <span v-if="currentData.name">
-                <Icon type="ios-arrow-forward"/>
-                {{currentData.name}}
-            </span>
-          <span v-else-if="currentData.id">
-                <Icon type="ios-arrow-forward"/>
-                {{currentData.id}}
-            </span>
-          </span v-else>
-          <span></span>
+        <p class="tableName">我的信息
         </p>
 
 
@@ -35,28 +25,9 @@
         <div class="form-level">
 
           <FormItem class="form-item"
-                    label="姓名" prop="name">
-            <Input @on-change="change" v-model="currentData.name" placeholder="请输入" disabled
+                    label="昵称" prop="name">
+            <Input @on-change="change" v-model="currentData.first_name" placeholder="请输入"
                    style="width: 300px"/></FormItem>
-
-        </div>
-
-
-        <div class="form-level">
-          <FormItem class="search-item" label="职位" prop="role_names" disabled>
-            <Select
-                    class="search-item-input"
-                    v-model="currentData.role_names" filterable disabled
-                    multiple>
-              <Option v-for="item in role_namesSelect" :value="item.key"
-                      :key="item.key"
-                      :label="item.value"
-              >
-                {{item.value}}
-              </Option>
-            </Select>
-          </FormItem>
-
 
         </div>
 
@@ -101,31 +72,7 @@
             <Button @click="editPassword">修改密码</Button>
           </FormItem>
 
-
         </div>
-
-
-        <div class="form-level">
-
-
-          <FormItem class="search-item" label="店铺" prop="shop_id">
-            <Select @on-change="change"
-                    class="search-item-input"
-                    v-model="currentData.shop_id" filterable disabled
-            >>
-              <Option v-for="item in this.shop_idSelect" :value="item.id"
-                      :key="item.id"
-                      :label="item.name"
-              >
-                <span style="float:right;">{{item.name}}</span>
-                <span style="color:#aaa">{{item.id}}</span>
-              </Option>
-            </Select>
-          </FormItem>
-
-
-        </div>
-
 
       </Form>
 
@@ -182,18 +129,13 @@
         showEditPassword:false,
         id: '',
         currentData: {
-          name: "",
-          role_names:[],
+          first_name: "",
           username: "",
           telephone: "",
           email: "",
-          password: "",
           shop_id: "",
         },
         ruleValidate: {
-          name: [
-            {required: true, trigger: 'change', message: "姓名有误"},
-          ],
           role_names: [
             {required: true, type: 'array', trigger: 'change', message: "职位有误"},
           ],
@@ -306,7 +248,7 @@
     methods: {
       getName,
       prepare_save() {
-        return editOperator(this.srcData.name, this.currentData);
+        return editUser(this.srcData.id, this.currentData);
       },
 
 
@@ -319,6 +261,7 @@
           let remoteData = response.data;
           this.srcData = response.data;
           this.id = response.data.id;
+          updateWithinField(this.currentData, this.srcData)
           // Object.keys(remoteData.shop).forEach((key) => {
           //   this.shop.data.push({
           //     key: key,
@@ -329,7 +272,6 @@
         })
       },
       change() {
-        debugger
         this.savable = true;
       },
 

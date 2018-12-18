@@ -1,28 +1,15 @@
 
 export default [
   {
-    name: "首页",
     path: "/",
     icon: "icon-home",
-    redirect: '/',
+    redirect: '/sample',
     meta: {
       roles: [
         'manager',
         'user'
       ]
     },
-    component: resolve => require(['Views/index'], resolve),
-    children: [{
-      path: "",
-      name: "首页",
-      component: resolve => require(['Views/Home'], resolve),
-      meta: {
-        roles: [
-          'manager',
-          'user'
-        ]
-      },
-    },]
   },
   {
     path: "/login",

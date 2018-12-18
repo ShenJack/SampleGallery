@@ -77,8 +77,8 @@ export function responseSuccessFunc(responseObj) {
 export function responseFailFunc(responseError) {
   // 响应失败，可根据 responseError.message 和 responseError.response.status 来做监控处理
   // ...
-  let stauts = responseError.response.status;
-  switch (stauts) {
+  let status = responseError.response.status;
+  switch (status) {
     case 401:
       if (router.currentRoute.path === '/login') {
         window.vbus.$emit('global.message.warning', "用户名或密码错误");
@@ -88,11 +88,15 @@ export function responseFailFunc(responseError) {
       }
       break;
     case 400:
-      window.vbus.$emit('global.message.error', responseError.response.data.error);
+      window.vbus.$emit('global.message.error', responseError.response.data.detail);
       break;
     default:
       CONSOLE_REQUEST_ENABLE && console.info('requestInterceptorFunc', `url: ${responseError.url}`, responseError)
-      window.vbus.$emit('global.message.error', "系统异常");
+      if(responseError.response.data.detail){
+        window.vbus.$emit('global.message.error', responseError.response.data.detail);
+      }else{
+        window.vbus.$emit('global.message.error', "系统异常");
+      }
       eventBus.$emit("error");
 
   }

@@ -20,3 +20,11 @@ export function setToken(token) {
 export function clearToken() {
   delete axios.defaults.headers.common[TokenKey]
 }
+
+export function isManager() {
+  return store.state.userInfo.groups.some(role => role === 'manager')
+}
+
+export function isUser() {
+  return store.state.userInfo.groups.some(role => role === 'user')
+}

@@ -16,7 +16,7 @@
         </FormItem>
 
 
-        <FormItem class="search-item" label="上传自">
+        <FormItem v-if="isManager()" class="search-item" label="上传自">
           <Select @on-change="change"
                   class="search-item-input"
                   v-model="searchObject.uploader"
@@ -83,6 +83,7 @@
   import {getColor} from "../../service/const";
   import {reviewedSelect} from "../../service/const/select";
   import {getUsers} from "../../service/api/user";
+  import {isManager, isUser} from "../../utils/auth";
 
 
   export default {
@@ -124,7 +125,13 @@
 
         columns: [
 
-
+          {
+            title: "分享者",
+            key: "uploader",
+            render: (h, params) => {
+              return h("div", [h("p", getName(params.row.uploader))]);
+            }
+          },
           {
             title: "编号",
             width: 60,
@@ -147,13 +154,7 @@
               return h("div", [h("p", getName(params.row.description))]);
             }
           },
-          {
-            title: "分享者",
-            key: "uploader",
-            render: (h, params) => {
-              return h("div", [h("p", getName(params.row.uploader))]);
-            }
-          },
+
           {
             title: "审核状态",
             key: "reviewState",
@@ -217,6 +218,7 @@
       }
     },
     methods: {
+      isManager,
       show(index) {
         this.$router.push({
           name: "样本详情",
@@ -269,10 +271,8 @@
       addOk(data) {
         this.showAdd = false;
         addSample(data).then((response) => {
-            if (response.data.code === 200) {
               this.$Message.success("新建成功");
               this.fetchData();
-            }
           }
         );
       }
@@ -303,7 +303,10 @@
 
 
     mounted: function () {
-
+      if(isUser()){
+        this.columns.splice(0,1)
+        this.searchObject.uploader = this.$store.state.userInfo.id;
+      }
       this.fetchData();
       this.fetchSelect();
     }

@@ -43,7 +43,7 @@ export const currentUser = (params) => {
 };
 
 export const editUser = (id,params)=>{
-  return axios.post('/auth/users/' + id,params)
+  return axios.put('/auth/users/' + id + '/',params)
 }
 
 export const registerUser = (params)=>{

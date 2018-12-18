@@ -1,3 +1,4 @@
+from rest_framework.utils.serializer_helpers import ReturnDict
 from rest_framework.views import exception_handler
 
 
@@ -7,7 +8,7 @@ def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
     # Now add the HTTP status code to the response.
-    if response is not None:
-        response.data['error'] = list(exc.args[0].values())[0][0]
+    if len(exc.args)>0 and isinstance(exc.args[0], ReturnDict) :
+        response.data['detail'] = list(exc.args[0].values())[0][0]
 
     return response

@@ -115,7 +115,7 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'SampleGallery.exception.custom_exception_handler',
 }
 
-# AUTH_USER_MODEL = 'sam'
+AUTH_USER_MODEL = 'sample.user'
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/

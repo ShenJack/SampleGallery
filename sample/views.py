@@ -1,7 +1,6 @@
 import datetime
 
 import django_filters
-from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.http import Http404, HttpResponse, JsonResponse
@@ -11,12 +10,13 @@ from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, generics, status
 from rest_framework.decorators import action
-from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import get_object_or_404, ListAPIView, RetrieveUpdateAPIView, UpdateAPIView, CreateAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from sample.models import Sample, IMG
-from sample.serializer import UserSerializer, SampleSerializer
+from sample.models import Sample, IMG, User
+from sample.serializer import UserSerializer, SampleSerializer, ChangePasswordSerializer, UserEditSerializer
 
 
 # class UserList(generics.ListAPIView):
@@ -32,6 +32,14 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data)
 
+    def update(self, request, pk=None, **kwargs):
+        user = User.objects.get(pk=pk)
+        serializer = UserEditSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class SampleList(ListAPIView):
     """
@@ -39,7 +47,7 @@ class SampleList(ListAPIView):
     """
 
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('id', 'name', 'description','reviewed')
+    filter_fields = ('id', 'name', 'description', 'reviewed', 'uploader')
     serializer_class = SampleSerializer
     queryset = Sample.objects.all()
 
@@ -49,7 +57,7 @@ class SampleList(ListAPIView):
     #     return Response(serializer.data)
 
     def post(self, request, format=None):
-        serializer = SampleSerializer(data=request.data)
+        serializer = SampleSerializer(data=request.data,context={'request':request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -124,9 +132,38 @@ class SampleViewSet(viewsets.ViewSet):
 def upload_file(request):
     if request.method == 'POST':
         new_img = IMG(
-            img=request.FILES.get("file"),
+            img=request.FILES.get("file", ),
         )
         new_img.save()
         return JsonResponse({"path": '/' + new_img.img.name, "id": new_img.id})
     else:
         return HttpResponse('Not a post!')
+
+
+class ChangePasswordView(UpdateAPIView):
+    """
+    An endpoint for changing password.
+    """
+    serializer_class = ChangePasswordSerializer
+    model = User
+
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self, queryset=None):
+        obj = self.request.user
+        return obj
+
+    def update(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            # Check old password
+            if not self.object.check_password(serializer.data.get("old_password", )):
+                return Response({"detail":"密码错误"}, status=status.HTTP_400_BAD_REQUEST)
+            # set_password also hashes the password that the user will get
+            self.object.set_password(serializer.data.get("new_password", ))
+            self.object.save()
+            return Response({"detail":"修改成功"}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

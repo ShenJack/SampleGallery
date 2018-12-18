@@ -9,16 +9,16 @@ import {hasPermission} from "Utils/auth"
 export function routerBeforeEachFunc(to, from, next) {
   // 这里可以做页面拦截，很多后台系统中也非常喜欢在这里面做权限处理
   if (to.path !== '/login') {
-    currentUser().then(resp => {
-      if (hasPermission(store.getters.userinfoGetter.groups, to.meta.roles)) {
-        next()
-      } else {
-        //没有权限
-        next({path: '/401', replace: true, query: {noGoBack: true}})
-      }
-    }).catch(() => {
-      next({path: '/login', query: {next: to.path, manual: true}},)
-    })
+    // currentUser().then(resp => {
+    //   if (hasPermission(store.getters.userinfoGetter.groups, to.meta.roles)) {
+    //     next()
+    //   } else {
+    //     //没有权限
+    //     next({path: '/401', replace: true, query: {noGoBack: true}})
+    //   }
+    // }).catch(() => {
+    //   next({path: '/login', query: {next: to.path, manual: true}},)
+    // })
 
     if (getToken()) {
       if (hasPermission(store.getters.userinfoGetter.groups, to.meta.roles)) {

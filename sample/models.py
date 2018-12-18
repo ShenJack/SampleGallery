@@ -1,12 +1,12 @@
 import json
 
-from django.contrib.auth.models import User, AbstractUser
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 
-# Create your models here.
 
+# Create your models here.
 
 class UpdateMixin(object):
     def update(self, **kwargs):
@@ -17,7 +17,12 @@ class UpdateMixin(object):
         self.save(update_fields=kwargs.keys())
 
 
-class Sample(models.Model,UpdateMixin):
+class User(AbstractUser, UpdateMixin):
+    icon = models.CharField(max_length=100)
+    name = models.CharField(max_length=20,default="")
+
+
+class Sample(models.Model, UpdateMixin):
     STATE_NEED_REVIEW = "NR"
     STATE_REJECTED = "RJ"
     STATE_PASSED = 'PS'
@@ -29,7 +34,7 @@ class Sample(models.Model,UpdateMixin):
 
     name = models.TextField()
     description = models.TextField()
-    uploader = models.ForeignKey('auth.User', related_name='samples', on_delete=models.SET_DEFAULT, default=1)
+    uploader = models.ForeignKey(to=User, related_name='samples', on_delete=models.SET_DEFAULT, default=1)
     uploadTime = models.DateTimeField(default=timezone.now())
     reviewedTime = models.DateTimeField(default=timezone.now())
     passTime = models.DateTimeField(default=timezone.now())
@@ -39,7 +44,15 @@ class Sample(models.Model,UpdateMixin):
 
 class IMG(models.Model):
     img = models.ImageField(upload_to='static/img')
-    sample = models.ForeignKey(related_name='pics', on_delete=models.CASCADE, to=Sample,default=1)
+    sample = models.ForeignKey(related_name='pics', on_delete=models.CASCADE, to=Sample, default=1)
 
     def path(self):
         return self.img.name
+
+
+def update(model, **kwargs):
+    if model._state.adding:
+        raise model.DoesNotExist
+    for field, value in kwargs.items():
+        setattr(model, field, value)
+    model.save(update_fields=kwargs.keys())

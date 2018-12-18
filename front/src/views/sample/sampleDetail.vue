@@ -27,10 +27,10 @@
                 type="primary">保存
         </Button>
 
-        <Button v-if="!srcData.reviewed" type="error" @click="reject" class="save-button"
+        <Button v-if="!srcData.reviewed && isManager" type="error" @click="reject" class="save-button"
         >拒绝
         </Button>
-        <Button v-if="!srcData.reviewed" @click="pass" class="save-button"
+        <Button v-if="!srcData.reviewed && isManager"w @click="pass" class="save-button"
                 type="primary">通过
         </Button>
 
@@ -141,6 +141,7 @@
   import {getName} from "Const/index"
   import {updateWithinField} from "Utils/tools"
   import {passSample, rejectSmple} from "../../service/api/sample";
+  import {isManager} from "../../utils/auth";
 
 
   export default {
@@ -148,6 +149,7 @@
 
     data() {
       return {
+        isManager:false,
         visibleItem: {},
         visible:false,
         pics: [],
@@ -365,6 +367,7 @@
 
       },
 
+
       save() {
         this.$refs.formValidate.validate((valid) => {
           if (valid) {
@@ -410,7 +413,7 @@
     ,
     created() {
       this.fetchData();
-
+      this.isManager = isManager();
     }
   }
 </script>
