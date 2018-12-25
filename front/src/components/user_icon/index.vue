@@ -4,11 +4,10 @@
       <Avatar icon="ios-person"/>
     </div>
     <Dropdown v-show="!login" @on-click="handleClick">
-      <span style="margin-right: 3px">{{ $store.state.userInfo.name}} <tag>{{ $store.state.userInfo.groups[0]}}</tag></span>
+      <span style="margin-right: 3px">{{ $store.state.userInfo.name}} <tag v-if="isManager()">管理员</tag></span>
       <Icon :size="18" type="md-arrow-dropdown"></Icon>
       <DropdownMenu slot="list">
         <DropdownItem name="logout">退出登录</DropdownItem>
-        <DropdownItem name="shop">我的店铺</DropdownItem>
         <DropdownItem name="info">我的信息</DropdownItem>
       </DropdownMenu>
     </Dropdown>
@@ -18,7 +17,7 @@
 
 <script>
   import {logoutUser} from '../../service/api/user'
-  import {clearToken, setToken} from "../../utils/auth";
+  import {clearToken, isManager, setToken} from "../../utils/auth";
   import Notice from "Notice"
 
   export default {
@@ -28,6 +27,7 @@
       login: {Boolean, default: false}
     },
     methods: {
+      isManager,
       handleClick(name) {
         switch (name) {
           case 'logout':

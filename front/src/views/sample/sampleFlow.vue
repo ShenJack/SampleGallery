@@ -2,9 +2,9 @@
   vue-waterfall-easy(ref="waterfall",:imgsArr="imgsArr",@scrollReachBottom="getData", @click="clickFn")
     div.detail(slot-scope="props")
       h3.title {{props.value.name}}
-      p.name 沈季康
+      p.name {{props.value.uploader.name}}
       div.avatar
-        Avatar(:src='props.value.icon')
+        Avatar(:src='props.value.uploader.icon')
     //-div(slot="waterfall-head")
       h1 waterfall-head
       h1 waterfall-head
@@ -49,6 +49,9 @@
           name: "样本详情",
           params: {id: value.id}})
       },
+      isManager(groups){
+        return groups.some(item=>{return item === 'manager'})
+      },
       goto(id) {
         this.$router.push({
           path: "/sample",
@@ -81,6 +84,12 @@
       width: 60px;
       font-size: smaller;
       color: #6b6b6e;
+    }
+    .manager{
+      margin-top: 31px;
+      width: 60px;
+      font-size: smaller;
+      color: #246e55;
     }
   }
 </style>

@@ -26,9 +26,42 @@
 
           <FormItem class="form-item"
                     label="昵称" prop="name">
-            <Input @on-change="change" v-model="currentData.first_name" placeholder="请输入"
+            <Input @on-change="change" v-model="currentData.name" placeholder="请输入"
                    style="width: 300px"/></FormItem>
 
+        </div>
+        <div class="form-level">
+        <FormItem class="search-item" label="图片">
+          <div>
+            <div style="height: 100px;display: flex;margin-top: 10px">
+              <img height="100" width="100" :src="editableData.icon_url" style="border-radius: 7px">
+              <spin v-show="uploading" style="
+                                  display: inline-block;
+                                  z-index: 20;
+                                  top: 39px;
+                                  left: 118px;
+                                  position: absolute;
+                          "></spin>
+              <div>
+                <Button style="height: 40px;margin-left: 10px;display: block" @click="selectPhoto">图片库
+                </Button>
+                <Upload
+                  :max-size="5120"
+                  :show-upload-list="false"
+                  :headers="{Authorization:getToken()}"
+                  :on-success="handleSuccess"
+                  :format="['jpg','jpeg','png']"
+                  :on-format-error="handleFormatError"
+                  :on-exceeded-size="handleMaxSize"
+                  :before-upload="handleBeforeUpload"
+                  action="/api/images/crops"
+                  style="display: inline-block;width:58px;">
+                  <Button style="height: 40px;margin-left: 10px;display: block;margin-top: 10px">上传图片</Button>
+                </Upload>
+              </div>
+            </div>
+          </div>
+        </FormItem>
         </div>
 
 
@@ -41,18 +74,6 @@
 
 
         </div>
-
-
-        <div class="form-level">
-
-          <FormItem class="form-item"
-                    label="电话" prop="telephone">
-            <Input @on-change="change" v-model="currentData.telephone" placeholder="请输入"
-                   style="width: 300px"/></FormItem>
-
-
-        </div>
-
 
         <div class="form-level">
 
@@ -129,7 +150,7 @@
         showEditPassword:false,
         id: '',
         currentData: {
-          first_name: "",
+          name: "",
           username: "",
           telephone: "",
           email: "",

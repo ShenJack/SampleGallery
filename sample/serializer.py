@@ -1,5 +1,5 @@
 import django_filters
-from django.contrib.auth.models import  Group
+from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework import permissions, serializers, viewsets, status
@@ -25,8 +25,14 @@ class ImgSerializer(serializers.ModelSerializer):
         )
 
 
+class CommonUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'icon', 'name', 'groups')
+
+
 class SampleSerializer(serializers.ModelSerializer):
-    uploader = StringRelatedField(many=False)
+    uploader = CommonUserSerializer(many=False)
     pics = ImgSerializer(many=True)
 
     class Meta:
@@ -70,9 +76,11 @@ class UserSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
     icon = serializers.CharField(required=False)
     name = serializers.CharField(required=False)
+
     class Meta:
         model = User
-        fields = ('id','icon', 'username', 'email', 'is_staff', 'name','samples', 'password', 'groups', 'first_name')
+        fields = ('id', 'icon', 'username', 'email', 'is_staff', 'name', 'samples', 'password', 'groups', 'first_name')
+
     def create(self, validated_data):
         user = super(UserSerializer, self).create(validated_data)
         user.set_password(validated_data['password'])
@@ -109,11 +117,11 @@ class ChangePasswordSerializer(serializers.Serializer):
 class UserEditSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name')
+        fields = ('username', 'email', 'name')
 
     def create(self, validated_data):
         pass
 
     def update(self, instance, validated_data):
-        update(instance,**validated_data)
+        update(instance, **validated_data)
         return instance
