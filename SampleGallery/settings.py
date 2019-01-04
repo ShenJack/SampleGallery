@@ -73,8 +73,12 @@ WSGI_APPLICATION = 'SampleGallery.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': "sample",
+        'USER': 'sample',
+        'PASSWORD': '0074sjkjx',
+        'HOST': 'shenjack.cn',
+        'PORT': '3306',
     }
 }
 
