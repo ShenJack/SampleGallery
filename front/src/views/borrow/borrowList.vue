@@ -3,7 +3,6 @@
     <div>
       <Form v-if="!useInside" class="form" label-position="left" inline>
 
-
         <FormItem class="search-item" label="名称">
           <Input @on-change="change" class="search-item-input" v-model="searchObject.name"
                  placeholder="请输入" clearable></Input>
@@ -55,6 +54,8 @@
 
     <Row class="table-operator-level">
       <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round">上传样本</Button>
+      <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round"></Button>
+      <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round">上传样本</Button>
     </Row>
 
     <Table :columns="columns" :data="data"></Table>
@@ -72,7 +73,7 @@
   </div>
 </template>
 <script>
-  import addDialog from "./addDialog"
+  // import addDialog from "./addDialog"
   import {getName, getState} from "Const"
   import {
     getSamples,
@@ -88,7 +89,6 @@
 
   export default {
     components: {
-      addDialog
     },
     props: {
       query: Object,
@@ -106,16 +106,9 @@
         searchObject: {
 
           reviewed: undefined,
-
           id: "",
-
-
           name: "",
-
-
           description: "",
-
-
           uploader: undefined,
 
 
@@ -124,9 +117,8 @@
         loading: false,
 
         columns: [
-
           {
-            title: "分享者",
+            title: "申请人",
             key: "uploader",
             render: (h, params) => {
               return h("div", [h("p", getName(params.row.uploader))]);
@@ -152,20 +144,6 @@
             key: "description",
             render: (h, params) => {
               return h("div", [h("p", getName(params.row.description))]);
-            }
-          },
-          {
-            title: "提交状态",
-            key: "checkinStatus",
-            render: (h, params) => {
-              return h("div", [h("p", getName(params.row.checkinStatus))]);
-            }
-          },
-          {
-            title: "借阅状态",
-            key: "lendStatus",
-            render: (h, params) => {
-              return h("div", [h("p", getName(params.row.lendStatus))]);
             }
           },
 
@@ -247,8 +225,10 @@
           content: '<p>确认删除？</p>',
           onOk: () => {
             deleteSample(this.data[index].id).then((response) => {
+              if (response.data.code === 200) {
                 this.$Message.success("删除成功");
                 this.fetchData();
+              }
             });
           },
           onCancel: () => {
@@ -288,8 +268,8 @@
       addOk(data) {
         this.showAdd = false;
         addSample(data).then((response) => {
-              this.$Message.success("新建成功");
-              this.fetchData();
+            this.$Message.success("新建成功");
+            this.fetchData();
           }
         );
       }

@@ -29,6 +29,26 @@
         </FormItem>
       </div>
 
+      <div class="form-level">
+        <FormItem class="search-item" label="可以提交实物样本" prop="isEntity">
+          <Checkbox v-model="editableData.isEntity" placeholder="请输入"
+                 style="width: 300px"/>
+        </FormItem>
+      </div>
+
+      <div class="form-level">
+        <FormItem class="search-item" label="菌种" prop="bacteria">
+          <AutoComplete v-model="editableData.bacteria" placeholder="请输入"
+                    style="width: 300px"/>
+        </FormItem>
+      </div>
+
+      <div class="form-level">
+        <FormItem class="search-item" label="培养基" prop="bacteria">
+          <AutoComplete v-model="editableData.medium" placeholder="请输入"
+                        style="width: 300px"/>
+        </FormItem>
+      </div>
 
 
       <div class="form-level">
@@ -47,6 +67,7 @@
               </template>
             </div>
             <Upload
+              multiple
               ref="upload"
               :show-upload-list="false"
               :default-file-list="defaultList"
@@ -114,7 +135,10 @@
         editableData: {
           name: "",
           description: "",
+          isEntity:false,
           uploader: "",
+          bacteria:"",
+          medium:"",
         },
       }
     },

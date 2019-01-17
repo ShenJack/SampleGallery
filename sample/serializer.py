@@ -44,7 +44,51 @@ class SampleSerializer(serializers.ModelSerializer):
             'uploader',
             'reviewed',
             'reviewState',
-            'pics'
+            'pics',
+            'borrowable',
+            'checkinStatus',
+            'lendStatus',
+            'isEntity',
+            'bacteria',
+            'medium'
+        )
+
+    def create(self, validated_data):
+        pics = validated_data.pop('pics')
+        sample = Sample.objects.create(**validated_data)
+        for pic in pics:
+            img = IMG.objects.get(id=pic['id'])
+            img.sample = sample
+            img.save()
+        sample.uploader = self._context['request'].user
+        sample.save()
+        return sample
+
+    def update(self, instance, validated_data):
+        pics = validated_data.pop('pics')
+        instance.pics.all().update(sample=Sample.objects.get(id=1))
+        for pic in pics:
+            img = IMG.objects.get(id=pic['id'])
+            instance.pics.add(img)
+        instance.update(**validated_data)
+        return instance
+
+
+class SampleCreateSerializer(serializers.ModelSerializer):
+    pics = ImgSerializer(many=True)
+
+    class Meta:
+        model = Sample
+        fields = (
+            'id',
+            'name',
+            'description',
+            'reviewed',
+            'reviewState',
+            'pics',
+            'isEntity',
+            'bacteria',
+            'medium'
         )
 
     def create(self, validated_data):
@@ -117,7 +161,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 class UserEditSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', 'email', 'name')
+        fields = ('username', 'email', 'name', 'icon')
 
     def create(self, validated_data):
         pass
@@ -125,3 +169,27 @@ class UserEditSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         update(instance, **validated_data)
         return instance
+
+
+class CheckinCodeSerializer(serializers.ModelSerializer):
+    uploader = CommonUserSerializer(many=False)
+    pics = ImgSerializer(many=True)
+
+    class Meta:
+        model = Sample
+        fields = (
+            'id',
+            'name',
+            'description',
+            'uploader',
+            'reviewed',
+            'reviewState',
+            'checkinCode',
+            'pics',
+            'borrowable',
+            'checkinStatus',
+            'lendStatus',
+            'isEntity',
+            'bacteria',
+            'medium'
+        )

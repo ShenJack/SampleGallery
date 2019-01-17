@@ -11,8 +11,7 @@
                 <Icon type="ios-arrow-forward"/>
                 {{editableData.id}}
             </span>
-          </span v-else>
-          <span></span>
+          <span v-else></span>
         </p>
 
 
@@ -20,20 +19,19 @@
         >返回
         </Button>
 
-        <Button v-bind:disabled="!savable" @click="save_back" class="save-button"
+        <Button v-if="isOwner" v-bind:disabled="!savable" @click="save_back" class="save-button"
         >保存并返回列表
         </Button>
-        <Button v-bind:disabled="!savable" @click="save" class="save-button"
+        <Button v-if="isOwner" v-bind:disabled="!savable" @click="save" class="save-button"
                 type="primary">保存
         </Button>
 
         <Button v-if="!srcData.reviewed && isManager" type="error" @click="reject" class="save-button"
         >拒绝
         </Button>
-        <Button v-if="!srcData.reviewed && isManager"w @click="pass" class="save-button"
+        <Button v-if="!srcData.reviewed && isManager" w @click="pass" class="save-button"
                 type="primary">通过
         </Button>
-
 
 
       </Row>
@@ -62,16 +60,39 @@
                    style="width: 300px"/></FormItem>
 
 
-        </div>u'se
+        </div>
+        <div class="form-level">
+          <FormItem class="search-item" label="可以提交实物样本" prop="isEntity">
+            <Checkbox @on-change="change" v-model="editableData.isEntity" placeholder="请输入"
+                      style="width: 30px"/>
+            <Button @click="getCode" v-if="editableData.isEntity && srcData.checkinStatus === 'WA'">获取验证码</Button>
+          </FormItem>
+        </div>
+
+        <div class="form-level">
+          <FormItem class="search-item" label="菌种" prop="bacteria">
+            <AutoComplete @on-change="change" v-model="editableData.bacteria" placeholder="请输入"
+                          style="width: 300px"/>
+          </FormItem>
+        </div>
+        <div class="form-level">
+          <FormItem class="search-item" label="培养基" prop="bacteria">
+            <AutoComplete @on-change="change" v-model="editableData.medium" placeholder="请输入"
+                          style="width: 300px"/>
+          </FormItem>
+        </div>
 
 
         <div class="form-level">
 
 
-          <FormItem class="form-item"
+          <FormItem class="form-item" style="display: flex"
                     label="分享自">
-            <Input @on-change="change" v-model="editableData.uploader" placeholder="请输入"
-                   style="width: 300px" disabled/></FormItem>
+            <p
+              style="width: 150px" disabled>{{srcData.uploader.name}}</p>
+            <Avatar :src='srcData.uploader.icon'></Avatar>
+
+          </FormItem>
 
 
         </div>
@@ -97,6 +118,7 @@
                 </template>
               </div>
               <Upload
+                v-if="isManager||isOwner"
                 class="upload"
                 ref="upload"
                 :show-upload-list="false"
@@ -140,7 +162,7 @@
   } from "Api/sample";
   import {getName} from "Const/index"
   import {updateWithinField} from "Utils/tools"
-  import {passSample, rejectSmple} from "../../service/api/sample";
+  import {getCodeForSample, passSample, rejectSmple} from "../../service/api/sample";
   import {isManager} from "../../utils/auth";
 
 
@@ -149,9 +171,10 @@
 
     data() {
       return {
-        isManager:false,
+        isManager: false,
+        isOwner: false,
         visibleItem: {},
-        visible:false,
+        visible: false,
         pics: [],
         uploadList: [],
         loaded: false,
@@ -164,12 +187,10 @@
 
 
           name: "",
-
-
           description: "",
-
-
-          uploader: "",
+          isEntity: false,
+          bacteria: "",
+          medium: "",
 
 
         },
@@ -300,6 +321,7 @@
         getSample(this.$route.params.id).then((response) => {
           let remoteData = response.data;
           this.srcData = response.data;
+          this.isOwner = this.$store.state.userInfo.id === this.srcData.uploader.id;
           this.id = response.data.id;
           this.editableData.id = response.data.id;
           this.fetchChild();
@@ -324,14 +346,14 @@
         }
       },
 
-      reject(){
-        rejectSmple(this.$route.params.id).then((resp)=>{
+      reject() {
+        rejectSmple(this.$route.params.id).then((resp) => {
           this.$Message.warning("已拒绝")
         })
       },
 
-      pass(){
-        passSample(this.$route.params.id).then(resp=>{
+      pass() {
+        passSample(this.$route.params.id).then(resp => {
           this.$Message.warning("已通过")
         })
       },
@@ -340,8 +362,8 @@
         this.$refs.formValidate.validate((valid) => {
           if (valid) {
             this.prepare_save().then((response) => {
-                this.$Message.success("修改成功");
-                this.$router.push(this.$route.matched[this.$route.matched.length - 2].path)
+              this.$Message.success("修改成功");
+              this.$router.push(this.$route.matched[this.$route.matched.length - 2].path)
             });
           } else {
             this.$Message.error('填写有误!');
@@ -372,9 +394,9 @@
         this.$refs.formValidate.validate((valid) => {
           if (valid) {
             this.prepare_save().then((response) => {
-                this.$Message.success("修改成功");
-                this.savable = false
-            }).catch(err=>{
+              this.$Message.success("修改成功");
+              this.savable = false
+            }).catch(err => {
               this.$Message.error("修改失败");
             });
           } else {
@@ -402,6 +424,24 @@
 
       fetchChild() {
 
+      },
+
+      getCode() {
+        getCodeForSample(this.srcData.id).then(resp => {
+          let content = []
+          content.push('<p>您的验证码：</p>');
+          content.push('<h2>')
+          content.push(resp.data.checkinCode);
+          content.push('</h2>')
+          this.$Modal.info({
+            title: '使用下方验证码到博物馆提交样本',
+            content: content.join(" "),
+            onOk: () => {
+              // this.$Message.info('Clicked ok');
+            },
+          })
+          ;
+        })
       },
 
       fetchSelectByShop() {
@@ -458,7 +498,7 @@
     margin-bottom: 10px;
   }
 
-  .upload .ivu-upload-drag{
+  .upload .ivu-upload-drag {
     width: 150px;
   }
 

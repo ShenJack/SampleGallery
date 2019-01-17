@@ -21,7 +21,7 @@ return axios.put("/api/samples/" + id +'/', params)
 };
 
 export const deleteSample = (id) => {
-return axios.delete("/api/samples/" + id)
+return axios.delete("/api/samples/" + id +'/')
 };
 
 export const passSample = (id) =>{
@@ -32,3 +32,6 @@ export const rejectSmple = (id) =>{
   return axios.get("/api/samples/" + id + '/reject/')
 };
 
+export const getCodeForSample = (id)=>{
+  return axios.get("/api/checkinCode/" + id + '/')
+}

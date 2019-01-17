@@ -16,10 +16,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from sample.models import Sample, IMG, User
-from sample.serializer import UserSerializer, SampleSerializer, ChangePasswordSerializer, UserEditSerializer
-
+from sample.serializer import UserSerializer, SampleSerializer, ChangePasswordSerializer, UserEditSerializer, \
+    SampleCreateSerializer, CheckinCodeSerializer
 
 # class UserList(generics.ListAPIView):
+from sample.utils import encryption
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -51,13 +52,21 @@ class SampleList(ListAPIView):
     serializer_class = SampleSerializer
     queryset = Sample.objects.all()
 
-    # def get(self, request, format=None, **kwargs):
-    #     samples = Sample.objects.all()
-    #     serializer = SampleSerializer(samples, many=True)
-    #     return Response(serializer.data)
+    def get(self, request, format=None, **kwargs):
+        if "personal" in request.query_params and request.query_params['personal']:
+            queryset = Sample.objects.filter(uploader=request.user)
+        else:
+            queryset = Sample.objects.all()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
-        serializer = SampleSerializer(data=request.data,context={'request':request})
+        serializer = SampleCreateSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -84,7 +93,7 @@ class SampleDetail(RetrieveUpdateAPIView):
 
     def put(self, request, pk, format=None):
         sample = self.get_object(pk)
-        serializer = SampleSerializer(sample, data=request.data)
+        serializer = SampleCreateSerializer(sample, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -97,7 +106,7 @@ class SampleDetail(RetrieveUpdateAPIView):
 
 
 class SampleViewSet(viewsets.ViewSet):
-    queryset = User.objects.all()
+    queryset = Sample.objects.all()
     serializer_class = SampleSerializer
     filter_backends = (DjangoFilterBackend,)
 
@@ -160,10 +169,28 @@ class ChangePasswordView(UpdateAPIView):
         if serializer.is_valid():
             # Check old password
             if not self.object.check_password(serializer.data.get("old_password", )):
-                return Response({"detail":"密码错误"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "密码错误"}, status=status.HTTP_400_BAD_REQUEST)
             # set_password also hashes the password that the user will get
             self.object.set_password(serializer.data.get("new_password", ))
             self.object.save()
-            return Response({"detail":"修改成功"}, status=status.HTTP_200_OK)
+            return Response({"detail": "修改成功"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetCheckinCode(RetrieveUpdateAPIView):
+
+    def get_object(self, pk):
+        try:
+            return Sample.objects.get(pk=pk)
+        except Sample.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        sample = self.get_object(pk)
+        if sample.checkinCode == "":
+            sample.checkinCode = encryption(str(sample.id) + sample.name + str(sample.uploadTime))
+            sample.save()
+        serializer = CheckinCodeSerializer(sample)
+        return Response(serializer.data)
+

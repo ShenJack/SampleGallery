@@ -1,7 +1,7 @@
 <template>
   <div class="user-avator-dropdown" style="display: flex">
     <div style="margin-right: 10px">
-      <Avatar icon="ios-person"/>
+      <Avatar :src="$store.state.userInfo.icon"/>
     </div>
     <Dropdown v-show="!login" @on-click="handleClick">
       <span style="margin-right: 3px">{{ $store.state.userInfo.name}} <tag v-if="isManager()">管理员</tag></span>

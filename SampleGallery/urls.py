@@ -38,6 +38,7 @@ urlpatterns = [
     path('login', CustomAuthToken.as_view()),
     path('image', upload_file),
     path('changePassword', views.ChangePasswordView.as_view()),
+    path('checkinCode/<int:pk>/', views.GetCheckinCode.as_view()),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
 

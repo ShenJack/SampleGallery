@@ -19,7 +19,8 @@ class UpdateMixin(object):
 
 class User(AbstractUser, UpdateMixin):
     icon = models.CharField(max_length=100)
-    name = models.CharField(max_length=20,default="")
+    name = models.CharField(max_length=20, default="")
+    contact = models.CharField(max_length=20, default="")
 
 
 class Sample(models.Model, UpdateMixin):
@@ -32,14 +33,56 @@ class Sample(models.Model, UpdateMixin):
         (STATE_REJECTED, '审核未通过'),
     )
 
+    STATE_UNAVAILABLE = "UA"
+    STATE_AVAILABLE = "AV"
+    STATE_WAIT = "WT"
+    STATE_LENT = "LT"
+
+    STATE_LEND = (
+        (STATE_UNAVAILABLE, "不可借"),
+        (STATE_AVAILABLE, '可借'),
+        (STATE_WAIT, '等待领取'),
+        (STATE_LENT, '已借出'),
+    )
+
+    STATE_WAIT_APPLY = "WA"
+    STATE_ALREADY_APPLIED = "AP"
+    STATE_IN_STORAGE = "IS"
+
+    STATE_CHECKIN = (
+        (STATE_WAIT_APPLY, '未申请'),
+        (STATE_ALREADY_APPLIED, '等待入库'),
+        (STATE_IN_STORAGE, '已入库'),
+    )
+
     name = models.TextField()
     description = models.TextField()
     uploader = models.ForeignKey(to=User, related_name='samples', on_delete=models.SET_DEFAULT, default=1)
-    uploadTime = models.DateTimeField(default=timezone.now())
-    reviewedTime = models.DateTimeField(default=timezone.now())
-    passTime = models.DateTimeField(default=timezone.now())
+    uploadTime = models.DateTimeField(default=timezone.now)
+    reviewedTime = models.DateTimeField(default=timezone.now)
+    passTime = models.DateTimeField(default=timezone.now)
     reviewed = models.BooleanField(default=False)
     reviewState = models.CharField(choices=STATE_CHOICES, max_length=2, default=STATE_NEED_REVIEW)
+
+    # About Lending
+    isEntity = models.BooleanField(default=False)
+    lendStatus = models.CharField(choices=STATE_LEND, max_length=2, default=STATE_UNAVAILABLE)
+    checkinStatus = models.CharField(choices=STATE_CHECKIN, max_length=2, default=STATE_WAIT_APPLY)
+    borrowable = models.BooleanField(default=False)
+
+    checkinCode = models.CharField(max_length=6, default="")
+
+    # About Colony Sample
+
+    # 菌种
+    bacteria = models.TextField(default="未知")
+
+    # 培养基
+    medium = models.TextField(default="未知")
+
+    # Function
+    def inStorage(self):
+        return self.checkinStatus == self.STATE_IN_STORAGE
 
 
 class IMG(models.Model):
@@ -56,3 +99,14 @@ def update(model, **kwargs):
     for field, value in kwargs.items():
         setattr(model, field, value)
     model.save(update_fields=kwargs.keys())
+
+
+class Lend(models.Model):
+    from_user = models.ForeignKey(to=User, related_name='lends', on_delete=models.CASCADE)
+    to_sample = models.OneToOneField(to=Sample, related_name='sample', on_delete=models.CASCADE)
+    createTime = models.DateTimeField(default=timezone.now)
+    pickTime = models.DateTimeField(default=None)
+    returnTime = models.DateTimeField(default=None)
+    latestReturnTime = models.DateTimeField(default=None)
+    latestPickTime = models.DateTimeField(default=None)
+    code = models.CharField(max_length=6, default="")

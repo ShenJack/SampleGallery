@@ -31,37 +31,34 @@
 
         </div>
         <div class="form-level">
-        <FormItem class="search-item" label="图片">
-          <div>
-            <div style="height: 100px;display: flex;margin-top: 10px">
-              <img height="100" width="100" :src="editableData.icon_url" style="border-radius: 7px">
-              <spin v-show="uploading" style="
+          <FormItem class="form-item" label="头像">
+            <div>
+              <div style="height: 100px;display: flex;margin-top: 10px">
+                <Avatar size="large" :src="currentData.icon" style="border-radius: 7px"/>
+                <spin v-show="uploading" style="
                                   display: inline-block;
                                   z-index: 20;
                                   top: 39px;
                                   left: 118px;
                                   position: absolute;
                           "></spin>
-              <div>
-                <Button style="height: 40px;margin-left: 10px;display: block" @click="selectPhoto">图片库
-                </Button>
-                <Upload
-                  :max-size="5120"
-                  :show-upload-list="false"
-                  :headers="{Authorization:getToken()}"
-                  :on-success="handleSuccess"
-                  :format="['jpg','jpeg','png']"
-                  :on-format-error="handleFormatError"
-                  :on-exceeded-size="handleMaxSize"
-                  :before-upload="handleBeforeUpload"
-                  action="/api/images/crops"
-                  style="display: inline-block;width:58px;">
-                  <Button style="height: 40px;margin-left: 10px;display: block;margin-top: 10px">上传图片</Button>
-                </Upload>
+                <div>
+                  <Upload
+                    :max-size="5120"
+                    :show-upload-list="false"
+                    :on-success="handleSuccess"
+                    :format="['jpg','jpeg','png']"
+                    :on-format-error="handleFormatError"
+                    :on-exceeded-size="handleMaxSize"
+                    :before-upload="handleBeforeUpload"
+                    action="/upload/image"
+                    style="display: inline-block;width:58px;">
+                    <Button style="height: 40px;margin-left: 10px;display: block;margin-top: 10px">上传</Button>
+                  </Upload>
+                </div>
               </div>
             </div>
-          </div>
-        </FormItem>
+          </FormItem>
         </div>
 
 
@@ -101,18 +98,18 @@
 
 
     <!--<div class="table children-table">-->
-      <!--<Divider-->
-        <!--orientation="left">店铺-->
+    <!--<Divider-->
+    <!--orientation="left">店铺-->
 
-        <!--<Icon type="ios-arrow-forward"/>-->
-        <!--{{shop.srcData.name}}-->
-        <!--<Button @click="this.shop.goto" style="margin:0 0 2px 10px">-->
-          <!--<Icon type="md-arrow-forward"></Icon>-->
-        <!--</Button>-->
-      <!--</Divider>-->
+    <!--<Icon type="ios-arrow-forward"/>-->
+    <!--{{shop.srcData.name}}-->
+    <!--<Button @click="this.shop.goto" style="margin:0 0 2px 10px">-->
+    <!--<Icon type="md-arrow-forward"></Icon>-->
+    <!--</Button>-->
+    <!--</Divider>-->
 
-      <!--<Table class="tableContent" :columns=shop.columns :data=shop.data-->
-             <!--:show-header=shop.showHeader></Table>-->
+    <!--<Table class="tableContent" :columns=shop.columns :data=shop.data-->
+    <!--:show-header=shop.showHeader></Table>-->
 
     <!--</div>-->
 
@@ -138,18 +135,20 @@
   import EditPasswordDialog from './EditPasswordDialog'
 
   export default {
-    components:{
+    components: {
       EditPasswordDialog
     },
     data() {
       return {
+        uploading: false,
         savable: false,
         next_editable: true,
         srcData: {},
         loadingCount: 0,
-        showEditPassword:false,
+        showEditPassword: false,
         id: '',
         currentData: {
+          icon: "",
           name: "",
           username: "",
           telephone: "",
@@ -276,7 +275,11 @@
       fetchSelect() {
 
       },
+      handleSuccess(res, file) {
 
+        this.currentData.icon = res.path;
+        this.change();
+      },
       fetchData() {
         currentUser().then((response) => {
           let remoteData = response.data;
@@ -336,11 +339,10 @@
         this.$refs.formValidate.validate((valid) => {
           if (valid) {
             this.prepare_save().then((response) => {
-              if (response.data.code === 200) {
-                this.$Message.success("修改成功");
-              } else {
-                this.$Message.error("修改失败");
-              }
+              this.$Message.success("修改成功");
+              this.savable = false;
+            }).catch(error => {
+              this.$Message.error("修改失败");
             });
           } else {
             this.$Message.error('填写有误!');
@@ -355,12 +357,12 @@
         this.fetchChild();
       },
 
-      passwordOk(){
-          this.showEditPassword = false
-          this.fetchData()
+      passwordOk() {
+        this.showEditPassword = false
+        this.fetchData()
       },
 
-      passwordCancel(){
+      passwordCancel() {
         this.showEditPassword = false
       },
 
@@ -368,7 +370,7 @@
         this.$router.push({name: name,})
       },
 
-      editPassword(){
+      editPassword() {
         this.showEditPassword = true
       }
     }

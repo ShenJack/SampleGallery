@@ -135,6 +135,65 @@ export default [
     },
 
     ]
+  },
+  {
+    name: "外借管理",
+    path: "/lend",
+    component: resolve => require(['Views/index'], resolve),
+    redirect: "/lend",
+    meta: {
+      visible: true,
+      roles: [
+        'manager',
+        'user'
+      ]
+    },
+    icon: "icon-tudi",
+    children: [{
+      name: "外借管理",
+      path: "", // xzl
+      component: resolve => require(['Views/borrow/borrowList'], resolve),
+      meta: {
+        visible: false,
+        roles: [
+
+          'manager',
+          'user'
+
+        ]
+      }
+    },
+
+    ]
+  },
+  {
+    name: "我的外借",
+    path: "/lend",
+    component: resolve => require(['Views/index'], resolve),
+    redirect: "/lend",
+    meta: {
+      visible: true,
+      roles: [
+        'manager',
+        'user'
+      ]
+    },
+    icon: "icon-tudi",
+    children: [{
+      name: "外借列表",
+      path: "", // xzl
+      component: resolve => require(['Views/borrow/borrowList'], resolve),
+      meta: {
+        visible: false,
+        roles: [
+
+          'manager',
+          'user'
+
+        ]
+      }
+    },
+    ]
   }
 ]
 
