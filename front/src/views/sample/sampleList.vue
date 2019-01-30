@@ -55,6 +55,8 @@
 
     <Row class="table-operator-level">
       <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round">上传样本</Button>
+      <Button @click="receive" size="large" type="primary" icon="plus-round">样本接收</Button>
+
     </Row>
 
     <Table :columns="columns" :data="data"></Table>
@@ -69,6 +71,12 @@
       :showModal="showAdd"
       @onOk="addOk"
       @onCancel="addCancel"></addDialog>
+
+    <receiveDialog
+      :useInside="useInside"
+      :showModal="showReceive"
+      @onOk="receiveOk"
+      @onCancel="receiveCancel"></receiveDialog>
   </div>
 </template>
 <script>
@@ -85,10 +93,12 @@
   import {getUsers} from "../../service/api/user";
   import {isManager, isUser} from "../../utils/auth";
 
+  import receiveDialog from './receiveDialog'
+
 
   export default {
     components: {
-      addDialog
+      addDialog,receiveDialog
     },
     props: {
       query: Object,
@@ -100,6 +110,7 @@
         reviewedSelect: reviewedSelect,
         itemCount: 0,
         currentPage: 1,
+        showReceive:false,
         showEdit: false,
         showAdd: false,
         editingId: "",
@@ -256,8 +267,23 @@
           }
         });
 
-
       },
+      receive(){
+        this.showReceive = true
+      },
+      receiveOk(data){
+        this.showReceive = false
+        let params = {code:data}
+        checkReceive(params).then(resp=>{
+          this.$Message.success("入库成功")
+        }).catch(err=>{
+          this.$Message.error("入库失败")
+        })
+      },
+      receiveCancel(){
+        this.showReceive = false
+      },
+
       add() {
         this.showAdd = true;
       }

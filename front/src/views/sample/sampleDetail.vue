@@ -32,6 +32,9 @@
         <Button v-if="!srcData.reviewed && isManager" w @click="pass" class="save-button"
                 type="primary">通过
         </Button>
+        <Button v-if="srcData.reviewed && !isManager && !isOwner" w @click="borrow" class="save-button"
+                type="primary">申请借阅
+        </Button>
 
 
       </Row>
@@ -44,7 +47,7 @@
 
           <FormItem class="form-item"
                     label="名称" prop="name">
-            <Input @on-change="change" v-model="editableData.name" placeholder="请输入"
+            <Input :disabled="!isOwner" @on-change="change" v-model="editableData.name" placeholder="请输入"
                    style="width: 300px"/></FormItem>
 
 
@@ -56,14 +59,15 @@
 
           <FormItem class="form-item"
                     label="描述" prop="description">
-            <Input @on-change="change" v-model="editableData.description" placeholder="请输入"
+            <Input :disabled="!isOwner" type="textarea" @on-change="change" v-model="editableData.description"
+                   placeholder="请输入"
                    style="width: 300px"/></FormItem>
 
 
         </div>
         <div class="form-level">
           <FormItem class="search-item" label="可以提交实物样本" prop="isEntity">
-            <Checkbox @on-change="change" v-model="editableData.isEntity" placeholder="请输入"
+            <Checkbox :disabled="!isOwner" @on-change="change" v-model="editableData.isEntity" placeholder="请输入"
                       style="width: 30px"/>
             <Button @click="getCode" v-if="editableData.isEntity && srcData.checkinStatus === 'WA'">获取验证码</Button>
           </FormItem>
@@ -71,13 +75,13 @@
 
         <div class="form-level">
           <FormItem class="search-item" label="菌种" prop="bacteria">
-            <AutoComplete @on-change="change" v-model="editableData.bacteria" placeholder="请输入"
+            <AutoComplete :disabled="!isOwner" @on-change="change" v-model="editableData.bacteria" placeholder="请输入"
                           style="width: 300px"/>
           </FormItem>
         </div>
         <div class="form-level">
           <FormItem class="search-item" label="培养基" prop="bacteria">
-            <AutoComplete @on-change="change" v-model="editableData.medium" placeholder="请输入"
+            <AutoComplete :disabled="!isOwner" @on-change="change" v-model="editableData.medium" placeholder="请输入"
                           style="width: 300px"/>
           </FormItem>
         </div>
@@ -88,9 +92,12 @@
 
           <FormItem class="form-item" style="display: flex"
                     label="分享自">
-            <p
-              style="width: 150px" disabled>{{srcData.uploader.name}}</p>
-            <Avatar :src='srcData.uploader.icon'></Avatar>
+            <Tooltip :content="'联系方式:' + srcData.uploader.email" placement="right-end">
+              <p
+                style="" disabled>{{srcData.uploader.name}}</p>
+              <Avatar :src='srcData.uploader.icon'></Avatar>
+            </Tooltip>
+
 
           </FormItem>
 
@@ -102,7 +109,6 @@
 
         <div class="form-level">
 
-
           <FormItem class="form-item">
             <div style="    display: flex; flex-wrap: wrap;">
               <div class="demo-upload-list" v-for="item in uploadList">
@@ -110,7 +116,7 @@
                   <img width="100" height="100" :src="item.url" style="object-fit: cover">
                   <div class="demo-upload-list-cover">
                     <Icon type="ios-eye-outline" @click.native="handleView(item)"></Icon>
-                    <Icon type="ios-trash-outline" @click.native="handleRemove(item)"></Icon>
+                    <Icon v-if="isOwner" type="ios-trash-outline" @click.native="handleRemove(item)"></Icon>
                   </div>
                 </template>
                 <template v-else>
@@ -164,6 +170,7 @@
   import {updateWithinField} from "Utils/tools"
   import {getCodeForSample, passSample, rejectSmple} from "../../service/api/sample";
   import {isManager} from "../../utils/auth";
+  import {borrow} from "../../service/api/borrow";
 
 
   export default {
@@ -417,6 +424,17 @@
         this.fetchChild();
       },
 
+      borrow(){
+        borrow(this.srcData.id).then(resp=>{
+          this.$Modal.success({
+            title: '借阅成功',
+            content: "请前往我的外借查看详细的借阅信息",
+            onOk: () => {
+              // this.$Message.info('Clicked ok');
+            },
+          })
+        })
+      },
 
       gotoDetail(name, param) {
         this.$router.push({name: name,})

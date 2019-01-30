@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.relations import StringRelatedField
 from rest_framework.response import Response
 
-from sample.models import Sample, IMG, update, User
+from sample.models import Sample, IMG, update, User, Lend
 
 
 class ImgSerializer(serializers.ModelSerializer):
@@ -28,7 +28,7 @@ class ImgSerializer(serializers.ModelSerializer):
 class CommonUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'icon', 'name', 'groups')
+        fields = ('id', 'icon', 'name', 'groups','email')
 
 
 class SampleSerializer(serializers.ModelSerializer):
@@ -192,4 +192,22 @@ class CheckinCodeSerializer(serializers.ModelSerializer):
             'isEntity',
             'bacteria',
             'medium'
+        )
+
+
+class LendSerializer(serializers.ModelSerializer):
+    from_user = CommonUserSerializer(many=False)
+    to_sample = SampleSerializer(many=False)
+
+    class Meta:
+        model = Lend
+        fields = (
+            'from_user',
+            'to_sample',
+            'createTime',
+            'pickTime',
+            'returnTime',
+            'latestReturnTime',
+            'latestPickTime',
+            'code',
         )

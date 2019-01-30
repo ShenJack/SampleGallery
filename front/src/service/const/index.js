@@ -47,6 +47,11 @@ export const getName = (key) => {
   return CONST[key] ? CONST[key] : key;
 };
 
+export const getTime = (time)=>{
+  let date = new Date(time)
+  return [date.getMonth()+1,"月",date.getDate(),'日'].join("")
+}
+
 
 export const getRole_namesSelect = () => {
   let role_names = store.state.userInfo.role_names;

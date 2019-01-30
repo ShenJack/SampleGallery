@@ -27,24 +27,32 @@
             </Option>
           </Select>
         </FormItem>
-        <FormItem class="search-item" label="未审核" prop="description">
+
+        <FormItem v-if="isManager()" class="search-item" label="借阅人">
           <Select @on-change="change"
                   class="search-item-input"
-                  v-model="searchObject.reviewed"
+                  v-model="searchObject.uploader"
           >
-            <Option v-for="item in reviewedSelect" :value="item.key"
-                    :key="item.value"
-                    :label="item.value"
+            <Option v-for="item in uploaderList" :value="item.key"
+                    :key="item.id"
             >
-              {{item.value}}
+              {{item.name}}
             </Option>
           </Select>
         </FormItem>
 
+        <FormItem class="search-item">
+          <Button  id="search-button" @click="fetchData" type="primary">查询</Button>
+          <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
+        </FormItem>
 
         <FormItem class="search-item">
-          <Button id="search-button" @click="fetchData" type="primary">查询</Button>
-          <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
+        </FormItem>
+
+        <Divider></Divider>
+
+        <FormItem class="search-item">
+          <Input @on-search="searchBorrow" search enter-button placeholder="借书验证码" />
         </FormItem>
 
 
@@ -52,24 +60,12 @@
 
     </div>
 
-    <Row class="table-operator-level">
-      <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round">上传样本</Button>
-      <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round"></Button>
-      <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round">上传样本</Button>
-    </Row>
-
     <Table :columns="columns" :data="data"></Table>
     <div style="margin: 10px;overflow: hidden">
       <div style="float: left;">
         <Page :page-size="20" :total="itemCount" :current="currentPage" @on-change="changePage"></Page>
       </div>
     </div>
-    <addDialog
-      :useInside="useInside"
-      :farmer="farmer"
-      :showModal="showAdd"
-      @onOk="addOk"
-      @onCancel="addCancel"></addDialog>
   </div>
 </template>
 <script>
@@ -81,11 +77,12 @@
     editSample,
     addSample
   } from "Api/sample"
-  import {getColor} from "../../service/const";
+  import {getColor, getTime} from "../../service/const";
   import {reviewedSelect} from "../../service/const/select";
   import {getUsers} from "../../service/api/user";
   import {isManager, isUser} from "../../utils/auth";
-
+  import {checkPick, checkReceive} from "../../service/api/sample";
+  import {finishBorrow, getBorrows} from "../../service/api/borrow";
 
   export default {
     components: {
@@ -97,6 +94,8 @@
     },
     data() {
       return {
+        showReceive:false,
+        showPick:false,
         reviewedSelect: reviewedSelect,
         itemCount: 0,
         currentPage: 1,
@@ -118,40 +117,32 @@
 
         columns: [
           {
-            title: "申请人",
-            key: "uploader",
-            render: (h, params) => {
-              return h("div", [h("p", getName(params.row.uploader))]);
-            }
-          },
-          {
-            title: "编号",
-            width: 60,
-            key: "id",
-            render: (h, params) => {
-              return h("div", [h("p", getName(params.row.id))]);
-            }
-          },
-          {
-            title: "名称",
+            title: "借阅人",
             key: "name",
             render: (h, params) => {
-              return h("div", [h("p", getName(params.row.name))]);
+              return h("div", [h("p", getName(params.row.from_user.name))]);
             }
           },
           {
-            title: "描述",
+            title: "最晚归还日期",
+            width: 200,
+            key: "latestPickTime",
+            render: (h, params) => {
+              return h("div", [h("p", getTime(params.row.latestPickTime))]);
+            }
+          },
+          {
+            title: "样本名称",
+            key: "name",
+            render: (h, params) => {
+              return h("div", [h("p", getName(params.row.to_sample.name))]);
+            }
+          },
+          {
+            title: "状态",
             key: "description",
             render: (h, params) => {
-              return h("div", [h("p", getName(params.row.description))]);
-            }
-          },
-
-          {
-            title: "审核状态",
-            key: "reviewState",
-            render: (h, params) => {
-              return h("div", [h("p", {style: {color: getColor(params.row.reviewState)}}, getName(params.row.reviewState))]);
+              return h("div", [h("p", getName(params.row.to_sample.lendStatus))]);
             }
           },
           {
@@ -172,11 +163,11 @@
                     },
                     on: {
                       click: () => {
-                        this.show(params.index);
+                        this.return(params.index);
                       }
                     }
                   },
-                  "查看"
+                  "归还"
                 ),
                 h(
                   "Button",
@@ -187,11 +178,11 @@
                     },
                     on: {
                       click: () => {
-                        this.remove(params.index);
+                        this.pick(params.index);
                       }
                     }
                   },
-                  "删除"
+                  "借出"
                 )
               ]);
             }
@@ -210,6 +201,9 @@
       }
     },
     methods: {
+      searchBorrow(value){
+
+      },
       isManager,
       show(index) {
         this.$router.push({
@@ -253,10 +247,8 @@
       ,
       fetchData() {
         let args = {...this.searchObject, ...this.pages};
-        if(isUser()){
-          args.personal = true;
-        }
-        getSamples(args).then((response) => {
+
+        getBorrows(args).then((response) => {
           this.data = response.data.results;
           this.itemCount = response.data.count;
         })
@@ -297,6 +289,29 @@
         this.currentPage = page;
         this.fetchData();
       },
+
+      pick(){
+        this.showReceive = true
+      },
+      pickOk(data){
+        this.showPick = false
+        let params = {code:data}
+        checkPick(params).then(resp=>{
+          this.$Message.success("入库成功")
+        }).catch(err=>{
+          this.$Message.error("入库失败")
+        })
+      },
+      pickCancel(){
+        this.showPick = false
+      },
+      returnOk(id){
+        finishBorrow(id).then(resp=>{
+          this.$Message.success("还书成功")
+        }).catch(err=>{
+          this.$Message.error("还书失败")
+        })
+      }
 
     },
 

@@ -30,6 +30,7 @@ from sample.views import upload_file
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
 router.register(r'samples', views.SampleViewSet)
+router.register(r'borrows', views.LendViewset)
 
 urlpatterns = [
     path('samples/', views.SampleList.as_view()),
@@ -39,6 +40,8 @@ urlpatterns = [
     path('image', upload_file),
     path('changePassword', views.ChangePasswordView.as_view()),
     path('checkinCode/<int:pk>/', views.GetCheckinCode.as_view()),
+    path('checkReceive/', views.VerifyCheckinCode.as_view()),
+    path('checkPick/', views.VerifyPickCode.as_view()),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
 

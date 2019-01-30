@@ -7,6 +7,7 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 
 # Create your views here.
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, generics, status
 from rest_framework.decorators import action
@@ -15,12 +16,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from sample.models import Sample, IMG, User
+from sample.models import Sample, IMG, User, Lend
 from sample.serializer import UserSerializer, SampleSerializer, ChangePasswordSerializer, UserEditSerializer, \
-    SampleCreateSerializer, CheckinCodeSerializer
+    SampleCreateSerializer, CheckinCodeSerializer, LendSerializer
 
 # class UserList(generics.ListAPIView):
-from sample.utils import encryption
+from sample.utils import encryption, isManager
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -53,10 +54,12 @@ class SampleList(ListAPIView):
     queryset = Sample.objects.all()
 
     def get(self, request, format=None, **kwargs):
-        if "personal" in request.query_params and request.query_params['personal']:
+        if isManager(request.user):
+            queryset = Sample.objects.all()
+        elif "personal" in request.query_params and request.query_params['personal']:
             queryset = Sample.objects.filter(uploader=request.user)
         else:
-            queryset = Sample.objects.all()
+            queryset = Sample.objects.filter(reviewed=True, reviewState=Sample.STATE_PASSED)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -105,6 +108,23 @@ class SampleDetail(RetrieveUpdateAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class LendViewset(viewsets.ModelViewSet):
+    queryset = Lend.objects.all()
+    serializer_class = LendSerializer
+    filter_backends = (DjangoFilterBackend,)
+
+    def pick(self, request, pk):
+        try:
+            lend = Lend.objects.get(pk=pk)
+            lend.pickTime = timezone.now()
+            sample = lend.to_sample
+            sample.lendStatus = sample.STATE_LENT
+            sample.save()
+            lend.save()
+        except Lend.DoesNotExist as e:
+            raise Http404()
+
+
 class SampleViewSet(viewsets.ViewSet):
     queryset = Sample.objects.all()
     serializer_class = SampleSerializer
@@ -133,6 +153,18 @@ class SampleViewSet(viewsets.ViewSet):
             return Response(serializer.data)
         except Sample.DoesNotExist as e:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['get'])
+    def borrow(self, request, pk=1):
+        try:
+            sample = Sample.objects.get(pk=pk)
+            lend = Lend.objects.create(to_sample=sample, from_user=request.user)
+            lend.init()
+            lend.save()
+            serializer = LendSerializer(lend)
+            return Response(serializer.data)
+        except Sample.DoesNotExist as e:
+            raise Http404
 
 
 # class SampleViewSet(viewsets.GenericViewSet):
@@ -194,3 +226,33 @@ class GetCheckinCode(RetrieveUpdateAPIView):
         serializer = CheckinCodeSerializer(sample)
         return Response(serializer.data)
 
+
+class VerifyCheckinCode(APIView):
+
+    def post(self, request, format=None):
+        if 'code' in request.data:
+            code = str.upper(request.data['code'])
+            sample_queryset = Sample.objects.filter(checkinCode=code)
+            if len(sample_queryset) > 0:
+                sample = sample_queryset[0]
+                sample.checkinStatus = Sample.STATE_IN_STORAGE
+                sample.lendStatus = Sample.STATE_AVAILABLE
+                sample.save()
+                return Response(SampleSerializer(sample).data)
+            else:
+                raise Http404
+
+
+class VerifyPickCode(APIView):
+    def post(self, request, format=None):
+        if 'code' in request.data:
+            code = str.upper(request.data['code'])
+            sample_queryset = Sample.objects.filter(checkinCode=code)
+            if len(sample_queryset) > 0:
+                sample = sample_queryset[0]
+                sample.checkinStatus = Sample.STATE_IN_STORAGE
+                sample.lendStatus = Sample.STATE_AVAILABLE
+                sample.save()
+                return Response(SampleSerializer(sample).data)
+            else:
+                raise Http404

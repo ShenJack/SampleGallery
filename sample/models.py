@@ -1,12 +1,15 @@
+import datetime
 import json
 
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 
 # Create your models here.
+from sample.utils import encryption
+
 
 class UpdateMixin(object):
     def update(self, **kwargs):
@@ -103,10 +106,16 @@ def update(model, **kwargs):
 
 class Lend(models.Model):
     from_user = models.ForeignKey(to=User, related_name='lends', on_delete=models.CASCADE)
-    to_sample = models.OneToOneField(to=Sample, related_name='sample', on_delete=models.CASCADE)
+    to_sample = models.ForeignKey(to=Sample, related_name='sample', on_delete=models.CASCADE)
     createTime = models.DateTimeField(default=timezone.now)
-    pickTime = models.DateTimeField(default=None)
-    returnTime = models.DateTimeField(default=None)
-    latestReturnTime = models.DateTimeField(default=None)
-    latestPickTime = models.DateTimeField(default=None)
+    pickTime = models.DateTimeField(default=timezone.now)
+    returnTime = models.DateTimeField(default=timezone.now)
+    latestReturnTime = models.DateTimeField(default=timezone.now)
+    latestPickTime = models.DateTimeField(default=timezone.now)
     code = models.CharField(max_length=6, default="")
+
+    def init(self):
+        self.latestPickTime = self.createTime + datetime.timedelta(days=7)
+        self.latestReturnTime = self.createTime + datetime.timedelta(days=31)
+        self.code = encryption(str(self.from_user.id) + str(self.to_sample.id) + "lend")
+        self.save()

@@ -35,3 +35,11 @@ export const rejectSmple = (id) =>{
 export const getCodeForSample = (id)=>{
   return axios.get("/api/checkinCode/" + id + '/')
 }
+
+export const checkReceive = (params)=>{
+  return axios.post("/api/checkReceive/",params)
+}
+
+export const checkPick = (params)=>{
+  return axios.post("/api/checkPick/",params)
+}
