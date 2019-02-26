@@ -105,8 +105,8 @@ def update(model, **kwargs):
 
 
 class Lend(models.Model):
-    from_user = models.ForeignKey(to=User, related_name='lends', on_delete=models.CASCADE)
-    to_sample = models.ForeignKey(to=Sample, related_name='sample', on_delete=models.CASCADE)
+    from_user = models.ForeignKey(to=User, related_name='lend', on_delete=models.CASCADE)
+    to_sample = models.ForeignKey(to=Sample, related_name='lend', on_delete=models.CASCADE)
     createTime = models.DateTimeField(default=timezone.now)
     pickTime = models.DateTimeField(default=timezone.now)
     returnTime = models.DateTimeField(default=timezone.now)

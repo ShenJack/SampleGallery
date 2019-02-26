@@ -34,6 +34,7 @@ router.register(r'borrows', views.LendViewset)
 
 urlpatterns = [
     path('samples/', views.SampleList.as_view()),
+    path('borrows/', views.LendList.as_view()),
     path('samples/<int:pk>/', views.SampleDetail.as_view()),
     path('admin', admin.site.urls),
     path('login', CustomAuthToken.as_view()),

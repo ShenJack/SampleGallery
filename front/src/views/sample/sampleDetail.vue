@@ -32,10 +32,14 @@
         <Button v-if="!srcData.reviewed && isManager" w @click="pass" class="save-button"
                 type="primary">通过
         </Button>
-        <Button v-if="srcData.reviewed && !isManager && !isOwner" w @click="borrow" class="save-button"
-                type="primary">申请借阅
-        </Button>
-
+        <template v-if="srcData.reviewed  && srcData.lendStatus!=='UA' && !isManager && !isOwner"  >
+          <Button v-if="srcData.lendStatus!=='LT' && srcData.lendStatus!=='WT'" @click="borrow" class="save-button"
+                  type="primary">申请借阅
+          </Button>
+          <Button v-else @click="borrow" class="save-button"
+                  disabled>已借出
+          </Button>
+        </template>
 
       </Row>
       <Form ref="formValidate" class="form" label-position="left" :rules="ruleValidate" :model="editableData">
@@ -433,6 +437,7 @@
               // this.$Message.info('Clicked ok');
             },
           })
+          this.fetchData()
         })
       },
 

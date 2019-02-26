@@ -3,58 +3,17 @@
     <div>
       <Form v-if="!useInside" class="form" label-position="left" inline>
 
-        <FormItem class="search-item" label="名称">
-          <Input @on-change="change" class="search-item-input" v-model="searchObject.name"
-                 placeholder="请输入" clearable></Input>
-        </FormItem>
+        <template v-if="isManager()">
+
+          <FormItem class="search-item">
+            <Input @on-search="searchBorrow" search enter-button placeholder="借书验证码"/>
+          </FormItem>
+          <FormItem class="search-item">
+            <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
+          </FormItem>
 
 
-        <FormItem class="search-item" label="描述">
-          <Input @on-change="change" class="search-item-input" v-model="searchObject.description"
-                 placeholder="请输入" clearable></Input>
-        </FormItem>
-
-
-        <FormItem v-if="isManager()" class="search-item" label="上传自">
-          <Select @on-change="change"
-                  class="search-item-input"
-                  v-model="searchObject.uploader"
-          >
-            <Option v-for="item in uploaderList" :value="item.key"
-                    :key="item.id"
-            >
-              {{item.name}}
-            </Option>
-          </Select>
-        </FormItem>
-
-        <FormItem v-if="isManager()" class="search-item" label="借阅人">
-          <Select @on-change="change"
-                  class="search-item-input"
-                  v-model="searchObject.uploader"
-          >
-            <Option v-for="item in uploaderList" :value="item.key"
-                    :key="item.id"
-            >
-              {{item.name}}
-            </Option>
-          </Select>
-        </FormItem>
-
-        <FormItem class="search-item">
-          <Button id="search-button" @click="fetchData" type="primary">查询</Button>
-          <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
-        </FormItem>
-
-        <FormItem class="search-item">
-        </FormItem>
-
-        <Divider></Divider>
-
-        <FormItem class="search-item">
-          <Input @on-search="searchBorrow" search enter-button placeholder="借书验证码"/>
-        </FormItem>
-
+        </template>
 
       </Form>
 
@@ -82,7 +41,7 @@
   import {getUsers} from "../../service/api/user";
   import {isManager, isUser} from "../../utils/auth";
   import {checkPick, checkReceive} from "../../service/api/sample";
-  import {finishBorrow, getBorrows} from "../../service/api/borrow";
+  import {finishBorrow, getBorrows, pickBorrow} from "../../service/api/borrow";
 
   export default {
     components: {},
@@ -150,8 +109,9 @@
             align: "center",
             render: (h, params) => {
               if (isManager()) {
-                return h("div", [
-                  h(
+                let result = []
+                if (params.row.to_sample.lendStatus === 'LT') {
+                  result.push(h(
                     "Button",
                     {
                       props: {
@@ -163,13 +123,14 @@
                       },
                       on: {
                         click: () => {
-                          this.return(params.index);
+                          this.return(params.row.id);
                         }
                       }
                     },
                     "归还"
-                  ),
-                  h(
+                  ))
+                }else if(params.row.to_sample.lendStatus === 'WT'){
+                  result.push(                  h(
                     "Button",
                     {
                       props: {
@@ -178,13 +139,15 @@
                       },
                       on: {
                         click: () => {
-                          this.pick(params.index);
+                          this.pick(params.row.id);
                         }
                       }
                     },
                     "借出"
+                    )
                   )
-                ]);
+                }
+                return h("div", result);
               } else {
                 return h("div", [
                   h(
@@ -224,7 +187,7 @@
     },
     methods: {
       searchBorrow(value) {
-
+        this.fetchData({pickCode: value})
       },
       isManager,
       show(index) {
@@ -280,9 +243,11 @@
         this.fetchData();
       }
       ,
-      fetchData() {
-        let args = {...this.searchObject, ...this.pages};
-
+      fetchData(addOnArgs = {}) {
+        if (!addOnArgs.hasOwnProperty("checkInCode")) {
+          this.searchTarget = "general"
+        }
+        let args = {...this.searchObject, ...this.pages, ...addOnArgs};
         getBorrows(args).then((response) => {
           this.data = response.data.results;
           this.itemCount = response.data.count;
@@ -325,29 +290,22 @@
         this.fetchData();
       },
 
-      pick() {
-        this.showReceive = true
-      },
-      pickOk(data) {
-        this.showPick = false
-        let params = {code: data}
-        checkPick(params).then(resp => {
-          this.$Message.success("入库成功")
+      pick(id) {
+        pickBorrow(id).then(resp => {
+          this.$Message.success("借阅成功")
         }).catch(err => {
-          this.$Message.error("入库失败")
+          this.$Message.error("借阅失败")
         })
+        this.fetchData();
       },
-      pickCancel() {
-        this.showPick = false
-      },
-      returnOk(id) {
+      return(id) {
         finishBorrow(id).then(resp => {
           this.$Message.success("还书成功")
         }).catch(err => {
           this.$Message.error("还书失败")
         })
-      }
-
+        this.fetchData();
+      },
     },
 
 

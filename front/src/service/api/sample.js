@@ -45,5 +45,5 @@ export const dismissReceive = (id)=>{
 }
 
 export const checkPick = (params)=>{
-  return axios.post("/api/checkPick/",params)
+  return axios.post("/api/borrows/pick",params)
 }

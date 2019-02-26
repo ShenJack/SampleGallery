@@ -3,6 +3,7 @@ import datetime
 import django_filters
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 
@@ -49,13 +50,20 @@ class SampleList(ListAPIView):
     """
 
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('id', 'name', 'description', 'reviewed', 'uploader')
     serializer_class = SampleSerializer
     queryset = Sample.objects.all()
+    filter_keys = ['name', 'description', 'reviewState', "checkinStatus", 'lendStatus', 'reviewed']
 
     def get(self, request, format=None, **kwargs):
         if isManager(request.user):
             queryset = Sample.objects.all()
+            for param in request.query_params:
+                if param in self.filter_keys:
+                    param_value = self.request.query_params.get(param, None)
+                    queryset = queryset.filter(**{param: getTrueFalse(param_value)})
+            userId = self.request.query_params.get('uploader', None)
+            if userId is not None:
+                queryset = queryset.filter(uploader=User.objects.get(id=userId))
             if "checkInCode" in request.query_params:
                 queryset = Sample.objects.filter(checkinCode=request.query_params['checkInCode'])
         elif "personal" in request.query_params and request.query_params['personal']:
@@ -115,6 +123,7 @@ class LendViewset(viewsets.ModelViewSet):
     serializer_class = LendSerializer
     filter_backends = (DjangoFilterBackend,)
 
+    @action(detail=True, methods=['get'])
     def pick(self, request, pk):
         try:
             lend = Lend.objects.get(pk=pk)
@@ -123,8 +132,47 @@ class LendViewset(viewsets.ModelViewSet):
             sample.lendStatus = sample.STATE_LENT
             sample.save()
             lend.save()
+            serializer = LendSerializer(lend, context={'request': request})
+            return Response(serializer.data)
         except Lend.DoesNotExist as e:
             raise Http404()
+
+    @action(detail=True, methods=['get'])
+    def finish(self, request, pk):
+        try:
+            lend = Lend.objects.get(pk=pk)
+            lend.pickTime = timezone.now()
+            sample = lend.to_sample
+            sample.lendStatus = sample.STATE_AVAILABLE
+            sample.save()
+            lend.save()
+            serializer = LendSerializer(lend, context={'request': request})
+            return Response(serializer.data)
+        except Lend.DoesNotExist as e:
+            raise Http404()
+
+
+class LendList(ListAPIView):
+    filter_backends = (DjangoFilterBackend,)
+    serializer_class = LendSerializer
+
+    def get(self, request, format=None, **kwargs):
+        queryset = Sample.objects.all().filter(~Q(lendStatus=Sample.STATE_UNAVAILABLE)) \
+                .filter(~Q(lendStatus=Sample.STATE_AVAILABLE))
+        if isManager(request.user):
+            if "pickCode" in request.query_params:
+                queryset = queryset.filter(code=request.query_params['pickCode'])
+        elif "personal" in request.query_params and request.query_params['personal']:
+            queryset = queryset.filter(from_user=request.user)
+
+        queryset = [sample.lend.all()[0] for sample in queryset]
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SampleViewSet(viewsets.ViewSet):
@@ -160,6 +208,8 @@ class SampleViewSet(viewsets.ViewSet):
     def borrow(self, request, pk=1):
         try:
             sample = Sample.objects.get(pk=pk)
+            sample.lendStatus = Sample.STATE_WAIT
+            sample.save()
             lend = Lend.objects.create(to_sample=sample, from_user=request.user)
             lend.init()
             lend.save()
@@ -280,3 +330,12 @@ class VerifyPickCode(APIView):
                 return Response(SampleSerializer(sample).data)
             else:
                 raise Http404
+
+
+def getTrueFalse(str):
+    if str == 'true':
+        return True
+    elif str == 'false':
+        return False
+    else:
+        return str

@@ -18,11 +18,11 @@ export const getBorrows = (params) => {
 }
 
 export const finishBorrow = (id) => {
-  return axios.delete("/api/borrows/" + id + '/finish/')
+  return axios.get("/api/borrows/" + id + '/finish/')
 };
 
 export const pickBorrow = (id) => {
-  return axios.delete("/api/borrows/" + id + '/pick/')
+  return axios.get("/api/borrows/" + id + '/pick/')
 };
 
 

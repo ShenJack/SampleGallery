@@ -181,7 +181,6 @@ export default [
       meta: {
         visible: false,
         roles: [
-          'manager',
           'user'
         ]
       }

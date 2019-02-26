@@ -21,7 +21,7 @@
                   class="search-item-input"
                   v-model="searchObject.uploader"
           >
-            <Option v-for="item in uploaderList" :value="item.key"
+            <Option v-for="item in uploaderList" :value="item.id"
                     :key="item.id"
             >
               {{item.name}}
@@ -334,9 +334,7 @@
       ,
       resetSearch() {
         Object.keys(this.searchObject).forEach((key) => {
-          if(key!=='uploader'){
             this.searchObject[key] = "";
-          }
         });
         this.fetchData();
       }

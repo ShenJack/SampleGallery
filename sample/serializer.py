@@ -202,6 +202,7 @@ class LendSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lend
         fields = (
+            'id',
             'from_user',
             'to_sample',
             'createTime',
