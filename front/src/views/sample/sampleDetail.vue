@@ -19,10 +19,10 @@
         >返回
         </Button>
 
-        <Button v-if="isOwner" v-bind:disabled="!savable" @click="save_back" class="save-button"
+        <Button v-if="isOwner || isManager" v-bind:disabled="!savable" @click="save_back" class="save-button"
         >保存并返回列表
         </Button>
-        <Button v-if="isOwner" v-bind:disabled="!savable" @click="save" class="save-button"
+        <Button v-if="isOwner || isManager" v-bind:disabled="!savable" @click="save" class="save-button"
                 type="primary">保存
         </Button>
 
@@ -449,8 +449,7 @@
           let content = []
           content.push('<p>您的验证码：</p>');
           content.push('<h2>')
-          content.push(resp.data.checkinCode);
-          content.push('</h2>')
+          content.push(resp.data.checkinCode+'</h2>');
           this.$Modal.info({
             title: '使用下方验证码到博物馆提交样本',
             content: content.join(" "),

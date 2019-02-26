@@ -42,7 +42,7 @@
         </FormItem>
 
         <FormItem class="search-item">
-          <Button  id="search-button" @click="fetchData" type="primary">查询</Button>
+          <Button id="search-button" @click="fetchData" type="primary">查询</Button>
           <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
         </FormItem>
 
@@ -52,7 +52,7 @@
         <Divider></Divider>
 
         <FormItem class="search-item">
-          <Input @on-search="searchBorrow" search enter-button placeholder="借书验证码" />
+          <Input @on-search="searchBorrow" search enter-button placeholder="借书验证码"/>
         </FormItem>
 
 
@@ -85,8 +85,7 @@
   import {finishBorrow, getBorrows} from "../../service/api/borrow";
 
   export default {
-    components: {
-    },
+    components: {},
     props: {
       query: Object,
       useInside: Boolean,
@@ -94,8 +93,8 @@
     },
     data() {
       return {
-        showReceive:false,
-        showPick:false,
+        showReceive: false,
+        showPick: false,
         reviewedSelect: reviewedSelect,
         itemCount: 0,
         currentPage: 1,
@@ -150,41 +149,64 @@
             width: 200,
             align: "center",
             render: (h, params) => {
-              return h("div", [
-                h(
-                  "Button",
-                  {
-                    props: {
-                      type: "primary",
-                      size: "small"
-                    },
-                    style: {
-                      marginRight: "5px"
-                    },
-                    on: {
-                      click: () => {
-                        this.return(params.index);
+              if (isManager()) {
+                return h("div", [
+                  h(
+                    "Button",
+                    {
+                      props: {
+                        type: "primary",
+                        size: "small"
+                      },
+                      style: {
+                        marginRight: "5px"
+                      },
+                      on: {
+                        click: () => {
+                          this.return(params.index);
+                        }
                       }
-                    }
-                  },
-                  "归还"
-                ),
-                h(
-                  "Button",
-                  {
-                    props: {
-                      type: "error",
-                      size: "small"
                     },
-                    on: {
-                      click: () => {
-                        this.pick(params.index);
+                    "归还"
+                  ),
+                  h(
+                    "Button",
+                    {
+                      props: {
+                        type: "error",
+                        size: "small"
+                      },
+                      on: {
+                        click: () => {
+                          this.pick(params.index);
+                        }
                       }
-                    }
-                  },
-                  "借出"
-                )
-              ]);
+                    },
+                    "借出"
+                  )
+                ]);
+              } else {
+                return h("div", [
+                  h(
+                    "Button",
+                    {
+                      props: {
+                        type: "primary",
+                        size: "small"
+                      },
+                      style: {
+                        marginRight: "5px"
+                      },
+                      on: {
+                        click: () => {
+                          this.showCode(params.row.code);
+                        }
+                      }
+                    },
+                    "查看借阅码"
+                  ),
+                ]);
+              }
             }
           }
 
@@ -201,7 +223,7 @@
       }
     },
     methods: {
-      searchBorrow(value){
+      searchBorrow(value) {
 
       },
       isManager,
@@ -209,8 +231,21 @@
         this.$router.push({
           name: "样本详情",
 
-          params: {id: this.data[index].id},
+          params: {id: this.data[index].code},
 
+        });
+      },
+      showCode(code) {
+        let content = []
+        content.push('<p>您的验证码：</p>');
+        content.push('<h2>')
+        content.push(code + '</h2>');
+        this.$Modal.info({
+          title: '使用下方验证码到博物馆领取样本',
+          content: content.join(" "),
+          onOk: () => {
+            // this.$Message.info('Clicked ok');
+          }
         });
       },
       remove(index) {
@@ -238,7 +273,7 @@
       ,
       resetSearch() {
         Object.keys(this.searchObject).forEach((key) => {
-          if(key!=='uploader'){
+          if (key !== 'uploader') {
             this.searchObject[key] = "";
           }
         });
@@ -271,15 +306,15 @@
       }
       ,
       fetchSelect() {
-        if(isManager()){
+        if (isManager()) {
           this.getUploaderList();
         }
       }
       ,
 
       getUploaderList(name) {
-        let params = {name:name};
-        getUsers(params).then(resp=>{
+        let params = {name: name};
+        getUsers(params).then(resp => {
           this.uploaderList = resp.data.results;
         })
       },
@@ -290,25 +325,25 @@
         this.fetchData();
       },
 
-      pick(){
+      pick() {
         this.showReceive = true
       },
-      pickOk(data){
+      pickOk(data) {
         this.showPick = false
-        let params = {code:data}
-        checkPick(params).then(resp=>{
+        let params = {code: data}
+        checkPick(params).then(resp => {
           this.$Message.success("入库成功")
-        }).catch(err=>{
+        }).catch(err => {
           this.$Message.error("入库失败")
         })
       },
-      pickCancel(){
+      pickCancel() {
         this.showPick = false
       },
-      returnOk(id){
-        finishBorrow(id).then(resp=>{
+      returnOk(id) {
+        finishBorrow(id).then(resp => {
           this.$Message.success("还书成功")
-        }).catch(err=>{
+        }).catch(err => {
           this.$Message.error("还书失败")
         })
       }
@@ -317,8 +352,8 @@
 
 
     mounted: function () {
-      if(isUser()){
-        this.columns.splice(0,1)
+      if (isUser()) {
+        this.columns.splice(0, 1)
         this.searchObject.uploader = this.$store.state.userInfo.id;
       }
       this.fetchData();

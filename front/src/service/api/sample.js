@@ -36,8 +36,12 @@ export const getCodeForSample = (id)=>{
   return axios.get("/api/checkinCode/" + id + '/')
 }
 
-export const checkReceive = (params)=>{
-  return axios.post("/api/checkReceive/",params)
+export const checkReceive = (id)=>{
+  return axios.get("/api/samples/"+id +"/checkReceiveCode/")
+}
+
+export const dismissReceive = (id)=>{
+  return axios.get("/api/samples/"+id +"/dismissReceive/")
 }
 
 export const checkPick = (params)=>{

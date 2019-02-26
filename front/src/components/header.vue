@@ -2,7 +2,7 @@
   <Header :style="{padding: 0}" style="height: 64px;width: 100%;-webkit-app-region: drag;min-width: 800px"
           class="layout-header-bar">
     <Row>
-      <Col :span="3" style="min-width: 200px">
+      <Col :span="3" style="min-width: 280px">
           <span style="font-size: 30px;margin-left: 24px;color: #eeeeee;">菌落样本博物馆</span>
       </Col>
       <Col v-if="!login" :span="3" style="min-width: 230px;margin-left: 10px">

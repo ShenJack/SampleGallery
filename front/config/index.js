@@ -1,6 +1,6 @@
 // see http://vuejs-templates.github.io/webpack for documentation.
 var path = require('path')
-var server = "http://118.228.173.13:8000/";
+var server = "http://localhost:8000/";
 module.exports = {
   build: {
     env: require('./prod.env'),

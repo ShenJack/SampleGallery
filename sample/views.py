@@ -56,6 +56,8 @@ class SampleList(ListAPIView):
     def get(self, request, format=None, **kwargs):
         if isManager(request.user):
             queryset = Sample.objects.all()
+            if "checkInCode" in request.query_params:
+                queryset = Sample.objects.filter(checkinCode=request.query_params['checkInCode'])
         elif "personal" in request.query_params and request.query_params['personal']:
             queryset = Sample.objects.filter(uploader=request.user)
         else:
@@ -163,6 +165,28 @@ class SampleViewSet(viewsets.ViewSet):
             lend.save()
             serializer = LendSerializer(lend)
             return Response(serializer.data)
+        except Sample.DoesNotExist as e:
+            raise Http404
+
+    @action(detail=True, methods=['get'])
+    def checkReceiveCode(self, request, pk=1):
+        try:
+            sample = Sample.objects.get(pk=pk)
+            sample.checkinStatus = Sample.STATE_IN_STORAGE
+            sample.lendStatus = Sample.STATE_AVAILABLE
+            sample.save()
+            return Response(SampleSerializer(sample).data)
+        except Sample.DoesNotExist as e:
+            raise Http404
+
+    @action(detail=True, methods=['get'])
+    def dismissReceive(self, request, pk=1):
+        try:
+            sample = Sample.objects.get(pk=pk)
+            sample.checkinStatus = Sample.STATE_WAIT_APPLY
+            sample.lendStatus = Sample.STATE_UNAVAILABLE
+            sample.save()
+            return Response(SampleSerializer(sample).data)
         except Sample.DoesNotExist as e:
             raise Http404
 

@@ -145,7 +145,6 @@ export default [
       visible: true,
       roles: [
         'manager',
-        'user'
       ]
     },
     icon: "icon-tudi",
@@ -156,10 +155,7 @@ export default [
       meta: {
         visible: false,
         roles: [
-
           'manager',
-          'user'
-
         ]
       }
     },
@@ -174,7 +170,6 @@ export default [
     meta: {
       visible: true,
       roles: [
-        'manager',
         'user'
       ]
     },
@@ -186,10 +181,8 @@ export default [
       meta: {
         visible: false,
         roles: [
-
           'manager',
           'user'
-
         ]
       }
     },

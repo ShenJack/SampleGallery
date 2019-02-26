@@ -9,10 +9,6 @@
         <Button @click="back" class="save-button"
         >返回
         </Button>
-
-        <Button v-bind:disabled="!savable" @click="save_back" class="save-button"
-        >保存并返回列表
-        </Button>
         <Button v-bind:disabled="!savable" @click="save" class="save-button"
                 type="primary">保存
         </Button>

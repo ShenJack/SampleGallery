@@ -47,18 +47,18 @@
           <Button id="search-button" @click="fetchData" type="primary">查询</Button>
           <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
         </FormItem>
-
-
       </Form>
 
     </div>
-
     <Row class="table-operator-level">
       <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round">上传样本</Button>
-      <Button @click="receive" size="large" type="primary" icon="plus-round">样本接收</Button>
-
     </Row>
-
+    <Divider></Divider>
+    <Form>
+      <FormItem class="search-item" v-if="isManager">
+        <Input @on-search="searchCheckIn" search enter-button placeholder="接收验证码" />
+      </FormItem>
+    </Form>
     <Table :columns="columns" :data="data"></Table>
     <div style="margin: 10px;overflow: hidden">
       <div style="float: left;">
@@ -94,6 +94,7 @@
   import {isManager, isUser} from "../../utils/auth";
 
   import receiveDialog from './receiveDialog'
+  import {checkReceive, dismissReceive} from "../../service/api/sample";
 
 
   export default {
@@ -107,6 +108,7 @@
     },
     data() {
       return {
+        searchTarget:"general",
         reviewedSelect: reviewedSelect,
         itemCount: 0,
         currentPage: 1,
@@ -140,7 +142,7 @@
             title: "分享者",
             key: "uploader",
             render: (h, params) => {
-              return h("div", [h("p", getName(params.row.uploader))]);
+              return h("div", [h("p", getName(params.row.uploader.name))]);
             }
           },
           {
@@ -192,41 +194,79 @@
             width: 200,
             align: "center",
             render: (h, params) => {
-              return h("div", [
-                h(
-                  "Button",
-                  {
-                    props: {
-                      type: "primary",
-                      size: "small"
-                    },
-                    style: {
-                      marginRight: "5px"
-                    },
-                    on: {
-                      click: () => {
-                        this.show(params.index);
+              if(this.searchTarget === "general"){
+                return h("div", [
+                  h(
+                    "Button",
+                    {
+                      props: {
+                        type: "primary",
+                        size: "small"
+                      },
+                      style: {
+                        marginRight: "5px"
+                      },
+                      on: {
+                        click: () => {
+                          this.show(params.index);
+                        }
                       }
-                    }
-                  },
-                  "查看"
-                ),
-                h(
-                  "Button",
-                  {
-                    props: {
-                      type: "error",
-                      size: "small"
                     },
-                    on: {
-                      click: () => {
-                        this.remove(params.index);
+                    "查看"
+                  ),
+                  h(
+                    "Button",
+                    {
+                      props: {
+                        type: "error",
+                        size: "small"
+                      },
+                      on: {
+                        click: () => {
+                          this.remove(params.index);
+                        }
                       }
-                    }
-                  },
-                  "删除"
-                )
-              ]);
+                    },
+                    "删除"
+                  )
+                ]);
+              }else if(this.searchTarget==="checkInCode"){
+                return h("div", [
+                  h(
+                    "Button",
+                    {
+                      props: {
+                        type: "primary",
+                        size: "small"
+                      },
+                      style: {
+                        marginRight: "5px"
+                      },
+                      on: {
+                        click: () => {
+                          this.receiveOk(params.row.id);
+                        }
+                      }
+                    },
+                    "接收"
+                  ),
+                  h(
+                    "Button",
+                    {
+                      props: {
+                        type: "error",
+                        size: "small"
+                      },
+                      on: {
+                        click: () => {
+                          this.dismissCheckIn(params.row.id);
+                        }
+                      }
+                    },
+                    "拒绝"
+                  )
+                ]);
+              }
             }
           }
 
@@ -268,22 +308,26 @@
         });
 
       },
-      receive(){
-        this.showReceive = true
+      searchCheckIn(checkInCode){
+        this.searchTarget = "checkInCode";
+        this.fetchData({checkInCode:checkInCode})
       },
-      receiveOk(data){
-        this.showReceive = false
-        let params = {code:data}
-        checkReceive(params).then(resp=>{
-          this.$Message.success("入库成功")
+      receiveOk(id){
+        checkReceive(id).then(resp=>{
+          this.$Message.success("接收成功")
         }).catch(err=>{
-          this.$Message.error("入库失败")
+          this.$Message.error("接收失败")
         })
+        this.fetchData()
       },
-      receiveCancel(){
-        this.showReceive = false
+      dismissCheckIn(id){
+        dismissReceive(id).then(resp=>{
+          this.$Message.success("已拒绝")
+        }).catch(err=>{
+          this.$Message.error("拒绝失败请重试")
+        })
+        this.fetchData()
       },
-
       add() {
         this.showAdd = true;
       }
@@ -297,8 +341,11 @@
         this.fetchData();
       }
       ,
-      fetchData() {
-        let args = {...this.searchObject, ...this.pages};
+      fetchData(addOnArgs={}) {
+        if(!addOnArgs.hasOwnProperty("checkInCode")){
+          this.searchTarget = "general"
+        }
+        let args = {...this.searchObject, ...this.pages,...addOnArgs};
         if(isUser()){
           args.personal = true;
         }
