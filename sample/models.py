@@ -117,5 +117,5 @@ class Lend(models.Model):
     def init(self):
         self.latestPickTime = self.createTime + datetime.timedelta(days=7)
         self.latestReturnTime = self.createTime + datetime.timedelta(days=31)
-        self.code = encryption(str(self.from_user.id) + str(self.to_sample.id) + "lend")
+        self.code = encryption(str(self.from_user.id) + str(self.to_sample.id)+ str(datetime.datetime.now()))
         self.save()
