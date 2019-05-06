@@ -45,7 +45,7 @@
     data () {
       return {
         form: {
-          userName: 'shenjack',
+          userName: '',
           password: ''
         }
       }
