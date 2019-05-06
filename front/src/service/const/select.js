@@ -41,6 +41,25 @@ export const getSelectFor = (childName) => {
   }
 };
 
+export const checkinStatus = [
+  {
+    key:"WA",
+    value:"未申请"
+  },
+  {
+    key:"",
+    value:"全部"
+  },
+  {
+    key:"AP",
+    value:"等待入库"
+  },
+  {
+    key:"IS",
+    value:"已入库"
+  }
+]
+
 export const reviewedSelect = [
   {
     key:"true",
@@ -53,5 +72,28 @@ export const reviewedSelect = [
   {
     key:"false",
     value:"未审核"
+  }
+]
+
+export const lendStatus = [
+  {
+    key:"LT",
+    value:"已借出"
+  },
+  {
+    key:"WT",
+    value:"等待领取"
+  },
+  {
+    key:"AV",
+    value:"可借"
+  },
+  {
+    key:"UA",
+    value:"不可借"
+  },
+  {
+    key:"",
+    value:"全部"
   }
 ]

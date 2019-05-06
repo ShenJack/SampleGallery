@@ -6,7 +6,7 @@
         <template v-if="isManager()">
 
           <FormItem class="search-item">
-            <Input @on-search="searchBorrow" search enter-button placeholder="借书验证码"/>
+            <Input v-model="code" @on-search="searchBorrow" search enter-button placeholder="借书验证码"/>
           </FormItem>
           <FormItem class="search-item">
             <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
@@ -52,6 +52,7 @@
     },
     data() {
       return {
+        code:"",
         showReceive: false,
         showPick: false,
         reviewedSelect: reviewedSelect,
@@ -193,9 +194,7 @@
       show(index) {
         this.$router.push({
           name: "样本详情",
-
           params: {id: this.data[index].code},
-
         });
       },
       showCode(code) {
@@ -235,11 +234,7 @@
       }
       ,
       resetSearch() {
-        Object.keys(this.searchObject).forEach((key) => {
-          if (key !== 'uploader') {
-            this.searchObject[key] = "";
-          }
-        });
+        this.code = "";
         this.fetchData();
       }
       ,
@@ -249,8 +244,7 @@
         }
         let args = {...this.searchObject, ...this.pages, ...addOnArgs};
         getBorrows(args).then((response) => {
-          this.data = response.data.results;
-          this.itemCount = response.data.count;
+          this.data = response.data;
         })
       }
       ,
@@ -293,18 +287,24 @@
       pick(id) {
         pickBorrow(id).then(resp => {
           this.$Message.success("借阅成功")
+          this.fetchData();
+
         }).catch(err => {
           this.$Message.error("借阅失败")
+          this.fetchData();
+
         })
-        this.fetchData();
       },
       return(id) {
         finishBorrow(id).then(resp => {
           this.$Message.success("还书成功")
+          this.fetchData();
+
         }).catch(err => {
           this.$Message.error("还书失败")
+          this.fetchData();
+
         })
-        this.fetchData();
       },
     },
 

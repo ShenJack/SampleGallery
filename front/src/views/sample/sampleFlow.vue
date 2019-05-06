@@ -30,7 +30,7 @@
         // Here I simulate it with a stunned json file.
         let params = {};
         getSamples(params).then((response) => {
-          response.data.results.forEach(item => {
+          response.data.forEach(item => {
             this.imgsArr.push({
               ...item,
               src: item.pics.length > 0 ? item.pics[0].path : '',

@@ -28,12 +28,40 @@
             </Option>
           </Select>
         </FormItem>
-        <FormItem class="search-item" label="未审核" prop="description">
+        <FormItem class="search-item" label="审核状态" prop="description">
           <Select @on-change="change"
                   class="search-item-input"
                   v-model="searchObject.reviewed"
           >
             <Option v-for="item in reviewedSelect" :value="item.key"
+                    :key="item.value"
+                    :label="item.value"
+            >
+              {{item.value}}
+            </Option>
+          </Select>
+        </FormItem>
+
+        <FormItem class="search-item" label="提交状态" prop="description">
+          <Select @on-change="change"
+                  class="search-item-input"
+                  v-model="searchObject.checkinStatus"
+          >
+            <Option v-for="item in checkinStatus" :value="item.key"
+                    :key="item.value"
+                    :label="item.value"
+            >
+              {{item.value}}
+            </Option>
+          </Select>
+        </FormItem>
+
+        <FormItem class="search-item" label="借阅状态" prop="description">
+          <Select @on-change="change"
+                  class="search-item-input"
+                  v-model="searchObject.lendStatus"
+          >
+            <Option v-for="item in lendStatus" :value="item.key"
                     :key="item.value"
                     :label="item.value"
             >
@@ -55,7 +83,7 @@
     </Row>
     <Divider></Divider>
     <Form>
-      <FormItem class="search-item" v-if="isManager">
+      <FormItem class="search-item" v-if="dataIsManager">
         <Input @on-search="searchCheckIn" search enter-button placeholder="接收验证码" />
       </FormItem>
     </Form>
@@ -89,7 +117,7 @@
     addSample
   } from "Api/sample"
   import {getColor} from "../../service/const";
-  import {reviewedSelect} from "../../service/const/select";
+  import {reviewedSelect,lendStatus,checkinStatus} from "../../service/const/select";
   import {getUsers} from "../../service/api/user";
   import {isManager, isUser} from "../../utils/auth";
 
@@ -110,15 +138,22 @@
       return {
         searchTarget:"general",
         reviewedSelect: reviewedSelect,
+        checkinStatus: checkinStatus,
+        lendStatus:lendStatus,
         itemCount: 0,
         currentPage: 1,
         showReceive:false,
         showEdit: false,
         showAdd: false,
         editingId: "",
+
+
         searchObject: {
 
           reviewed: undefined,
+          lendStatus:undefined,
+          checkinStatus:undefined,
+
 
           id: "",
 
@@ -280,10 +315,14 @@
         return {
           "_page": this.currentPage
         }
-      }
+      },
+      dataIsManager(){
+        return this.isManager()
+      },
     },
     methods: {
       isManager,
+      isUser,
       show(index) {
         this.$router.push({
           name: "样本详情",
@@ -347,14 +386,14 @@
         if(isUser()){
           args.personal = true;
         }
-        getSamples(args).then((response) => {
-          this.data = response.data.results;
-          this.itemCount = response.data.count;
+        getSamples(args).then(
+          (response) => {
+          this.data = response.data;
         })
       }
       ,
       change() {
-        this.fetchData();
+        // this.fetchData();
       },
       addOk(data) {
         this.showAdd = false;
