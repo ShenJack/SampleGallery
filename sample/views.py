@@ -70,10 +70,18 @@ class SampleList(ListAPIView):
             queryset = Sample.objects.filter(uploader=request.user)
         else:
             queryset = Sample.objects.filter(reviewed=True, reviewState=Sample.STATE_PASSED)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+
+        querydict = {}
+        for i in request.query_params:
+            if i in self.filter_keys:
+                if request.query_params[i] == 'true':
+                    querydict[i] = True
+                elif request.query_params[i] == 'false':
+                    querydict[i] = False
+                else:
+                    querydict[i] = request.query_params[i]
+
+        queryset = queryset.filter(**querydict)
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -157,19 +165,15 @@ class LendList(ListAPIView):
     serializer_class = LendSerializer
 
     def get(self, request, format=None, **kwargs):
-        queryset = Sample.objects.all().filter(~Q(lendStatus=Sample.STATE_UNAVAILABLE)) \
+        queryset = None
+        if "pickCode" in request.query_params:
+            queryset = Lend.objects.filter(code=request.query_params['pickCode']).order_by('-createTime')
+            if len(queryset)>0:
+                queryset = [queryset[0]]
+        else:
+            queryset = Sample.objects.all().filter(~Q(lendStatus=Sample.STATE_UNAVAILABLE)) \
                 .filter(~Q(lendStatus=Sample.STATE_AVAILABLE))
-        if isManager(request.user):
-            if "pickCode" in request.query_params:
-                queryset = queryset.filter(code=request.query_params['pickCode'])
-        elif "personal" in request.query_params and request.query_params['personal']:
-            queryset = queryset.filter(from_user=request.user)
-
-        queryset = [sample.lend.all()[0] for sample in queryset]
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            queryset = [sample.lend.all().order_by('-createTime')[0] for sample in queryset]
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
