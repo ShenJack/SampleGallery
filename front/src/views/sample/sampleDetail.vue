@@ -332,7 +332,7 @@
         getSample(this.$route.params.id).then((response) => {
           let remoteData = response.data;
           this.srcData = response.data;
-          this.isOwner = this.$store.state.userInfo.id === this.srcData.uploader.id;
+          this.isOwner = this.$store.state.userInfo.id === this.srcData.uploader.id || isManager();
           this.id = response.data.id;
           this.editableData.id = response.data.id;
           this.fetchChild();
@@ -406,6 +406,7 @@
           if (valid) {
             this.prepare_save().then((response) => {
               this.$Message.success("修改成功");
+              this.$router.go(-1)
               this.savable = false
             }).catch(err => {
               this.$Message.error("修改失败");
