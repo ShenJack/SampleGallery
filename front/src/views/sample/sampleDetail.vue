@@ -73,7 +73,7 @@
           <FormItem class="search-item" label="可以提交实物标本" prop="isEntity">
             <Checkbox :disabled="!isOwner" @on-change="change" v-model="editableData.isEntity" placeholder="请输入"
                       style="width: 30px"/>
-            <Button @click="getCode" v-if="editableData.isEntity && srcData.checkinStatus === 'WA' && isOwner">获取验证码</Button>
+            <Button @click="getCode" v-if="editableData.isEntity && srcData.checkinStatus === 'WA' && isOwner && !isManager">获取验证码</Button>
           </FormItem>
         </div>
 
@@ -101,8 +101,6 @@
                 style="" disabled>{{srcData.uploader.name}}</p>
               <Avatar :src='srcData.uploader.icon'></Avatar>
             </Tooltip>
-
-
           </FormItem>
 
 
