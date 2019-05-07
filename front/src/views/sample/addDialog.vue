@@ -30,7 +30,7 @@
       </div>
 
       <div class="form-level">
-        <FormItem class="search-item" label="可以提交实物样本" prop="isEntity">
+        <FormItem class="search-item" label="可以提交实物标本" prop="isEntity">
           <Checkbox v-model="editableData.isEntity" placeholder="请输入"
                  style="width: 300px"/>
         </FormItem>
@@ -129,7 +129,7 @@
 
         },
         loadingStatus: false,
-        title: "新建样本",
+        title: "新建标本",
         okText: "新建",
         cancelText: "取消",
         editableData: {

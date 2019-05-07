@@ -79,7 +79,7 @@
 
     </div>
     <Row class="table-operator-level">
-      <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round">上传样本</Button>
+      <Button @click="add" id="add-button" size="large" type="primary" icon="plus-round">上传标本</Button>
     </Row>
     <Divider></Divider>
     <Form>
@@ -325,7 +325,7 @@
       isUser,
       show(index) {
         this.$router.push({
-          name: "样本详情",
+          name: "标本详情",
 
           params: {id: this.data[index].id},
 

@@ -46,7 +46,7 @@
       },
       clickFn(event, { index, value }) {
         this.$router.push({
-          name: "样本详情",
+          name: "标本详情",
           params: {id: value.id}})
       },
       isManager(groups){

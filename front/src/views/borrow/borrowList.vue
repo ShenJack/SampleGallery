@@ -91,7 +91,7 @@
             }
           },
           {
-            title: "样本名称",
+            title: "标本名称",
             key: "name",
             render: (h, params) => {
               return h("div", [h("p", getName(params.row.to_sample.name))]);
@@ -193,7 +193,7 @@
       isManager,
       show(index) {
         this.$router.push({
-          name: "样本详情",
+          name: "标本详情",
           params: {id: this.data[index].code},
         });
       },
@@ -203,7 +203,7 @@
         content.push('<h2>')
         content.push(code + '</h2>');
         this.$Modal.info({
-          title: '使用下方验证码到博物馆领取样本',
+          title: '使用下方验证码到领取点领取标本',
           content: content.join(" "),
           onOk: () => {
             // this.$Message.info('Clicked ok');

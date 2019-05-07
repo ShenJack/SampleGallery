@@ -2,7 +2,7 @@
   <div>
     <div class="table" id="detail-table">
       <Row>
-        <p class="tableName">样本
+        <p class="tableName">标本
           <span v-if="editableData.name">
                 <Icon type="ios-arrow-forward"/>
                 {{editableData.name}}
@@ -70,7 +70,7 @@
 
         </div>
         <div class="form-level">
-          <FormItem class="search-item" label="可以提交实物样本" prop="isEntity">
+          <FormItem class="search-item" label="可以提交实物标本" prop="isEntity">
             <Checkbox :disabled="!isOwner" @on-change="change" v-model="editableData.isEntity" placeholder="请输入"
                       style="width: 30px"/>
             <Button @click="getCode" v-if="editableData.isEntity && srcData.checkinStatus === 'WA' && isOwner">获取验证码</Button>
@@ -78,13 +78,13 @@
         </div>
 
         <div class="form-level">
-          <FormItem class="search-item" label="菌种" prop="bacteria">
+          <FormItem class="search-item" label="菌物种类" prop="bacteria">
             <AutoComplete :disabled="!isOwner" @on-change="change" v-model="editableData.bacteria" placeholder="请输入"
                           style="width: 300px"/>
           </FormItem>
         </div>
         <div class="form-level">
-          <FormItem class="search-item" label="培养基" prop="bacteria">
+          <FormItem class="search-item" label="基物" prop="bacteria">
             <AutoComplete :disabled="!isOwner" @on-change="change" v-model="editableData.medium" placeholder="请输入"
                           style="width: 300px"/>
           </FormItem>
@@ -457,7 +457,7 @@
           content.push('<h2>')
           content.push(resp.data.checkinCode+'</h2>');
           this.$Modal.info({
-            title: '使用下方验证码到博物馆提交样本',
+            title: '使用下方验证码到提交点提交标本',
             content: content.join(" "),
             onOk: () => {
               // this.$Message.info('Clicked ok');

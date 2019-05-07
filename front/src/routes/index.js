@@ -1,4 +1,3 @@
-
 export default [
   {
     path: "/",
@@ -42,7 +41,7 @@ export default [
     ]
   },
   {
-    name: "样本馆",
+    name: "标本馆",
     path: "/sample",
     component: resolve => require(['Views/index'], resolve),
     redirect: "/sample",
@@ -55,7 +54,7 @@ export default [
     },
     icon: "icon-tudi",
     children: [{
-      name: "样本列表",
+      name: "标本列表",
       path: "", // xzl
       component: resolve => require(['Views/sample/sampleFlow'], resolve),
       meta: {
@@ -69,7 +68,7 @@ export default [
       }
     },
       {
-        name: "样本详情",
+        name: "标本详情",
         path: ":id", // xzl
         component: resolve => require(['Views/sample/sampleDetail'], resolve),
         meta: {
@@ -82,7 +81,7 @@ export default [
       }
     ]
   }
-  ,{
+  , {
     name: "我的上传",
     path: "/my_sample",
     component: resolve => require(['Views/index'], resolve),
@@ -95,7 +94,7 @@ export default [
     },
     icon: "icon-tudi",
     children: [{
-      name: "样本列表",
+      name: "标本列表",
       path: "", // xzl
       component: resolve => require(['Views/sample/sampleList'], resolve),
       meta: {
@@ -109,7 +108,7 @@ export default [
     ]
   },
   {
-    name: "样本管理",
+    name: "标本管理",
     path: "/review",
     component: resolve => require(['Views/index'], resolve),
     redirect: "/review",
@@ -121,7 +120,7 @@ export default [
     },
     icon: "icon-tudi",
     children: [{
-      name: "样本列表",
+      name: "标本列表",
       path: "", // xzl
       component: resolve => require(['Views/sample/sampleList'], resolve),
       meta: {
