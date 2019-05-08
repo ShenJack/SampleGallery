@@ -29,7 +29,7 @@
         <Button v-if="!srcData.reviewed && isManager" type="error" @click="reject" class="save-button"
         >拒绝
         </Button>
-        <Button v-if="!srcData.reviewed && isManager" w @click="pass" class="save-button"
+        <Button v-if="!srcData.reviewed && isManager" @click="pass" class="save-button"
                 type="primary">通过
         </Button>
         <template v-if="srcData.reviewed  && srcData.lendStatus!=='UA' && !isManager && !isOwner"  >
@@ -364,6 +364,7 @@
       pass() {
         passSample(this.$route.params.id).then(resp => {
           this.$Message.warning("已通过")
+          this.$router.go(-1);
         })
       },
       // 修改并返回到列表

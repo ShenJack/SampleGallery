@@ -32,14 +32,14 @@
       <div class="form-level">
         <FormItem class="search-item" label="可以提交实物标本" prop="isEntity">
           <Checkbox v-model="editableData.isEntity" placeholder="请输入"
-                 style="width: 300px"/>
+                    style="width: 300px"/>
         </FormItem>
       </div>
 
       <div class="form-level">
         <FormItem class="search-item" label="菌物种类" prop="bacteria">
           <AutoComplete v-model="editableData.bacteria" placeholder="请输入"
-                    style="width: 300px"/>
+                        style="width: 300px"/>
         </FormItem>
       </div>
 
@@ -111,6 +111,18 @@
       onOk: Function,
       onCancel: Function,
     },
+    watch: {
+      showModal(newVal, oldVal) {
+        this.editableData = {
+          name: "",
+          description: "",
+          isEntity: false,
+          uploader: "",
+          bacteria: "",
+          medium: "",
+        };
+      }
+    },
     data() {
       return {
         visibleItem: {},
@@ -135,10 +147,10 @@
         editableData: {
           name: "",
           description: "",
-          isEntity:false,
+          isEntity: false,
           uploader: "",
-          bacteria:"",
-          medium:"",
+          bacteria: "",
+          medium: "",
         },
       }
     },
@@ -204,11 +216,6 @@
       },
       cancel() {
         this.$emit('onCancel');
-      },
-      onShowChange() {
-        if (this.showModal) {
-          this.fetchData();
-        }
       },
       fetchSelect() {
       },
