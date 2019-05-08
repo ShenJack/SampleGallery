@@ -37,14 +37,14 @@
       </div>
 
       <div class="form-level">
-        <FormItem class="search-item" label="菌种" prop="bacteria">
+        <FormItem class="search-item" label="菌物种类" prop="bacteria">
           <AutoComplete v-model="editableData.bacteria" placeholder="请输入"
                     style="width: 300px"/>
         </FormItem>
       </div>
 
       <div class="form-level">
-        <FormItem class="search-item" label="培养基" prop="bacteria">
+        <FormItem class="search-item" label="基物" prop="bacteria">
           <AutoComplete v-model="editableData.medium" placeholder="请输入"
                         style="width: 300px"/>
         </FormItem>
