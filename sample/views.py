@@ -25,52 +25,77 @@ from sample.serializer import UserSerializer, SampleSerializer, ChangePasswordSe
 from sample.utils import encryption, isManager
 
 
+# viewset可以直接在urls里面注册，详细看urls.py
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     filter_backends = (DjangoFilterBackend,)
 
+    # 这个方法用来处理 url结尾是currentUser的请求，同时method是get的请求，用以获取当前用户信息
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def currentUser(self, request):
         serializer = UserSerializer(request.user, context={'request': request})
+
+        # 用序列化器序列化好的数据来新建Response并返回给前端
         return Response(serializer.data)
 
     def update(self, request, pk=None, **kwargs):
         user = User.objects.get(pk=pk)
         serializer = UserEditSerializer(user, data=request.data)
+
+        # serializer 还提供了数据校验功能，但是这个系统没有具体设置，调用is——valid可以校验数据
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# 用来处理： 获取所有sample和创建新的sample
 class SampleList(ListAPIView):
     """
     List all snippets, or create a new snippet.
     """
 
+    # 定义用于筛选（查询）的类
     filter_backends = (DjangoFilterBackend,)
+
     serializer_class = SampleSerializer
+
+    # 默认查询集，但是好像没用到
     queryset = Sample.objects.all()
+
+    # 自己定义的可以用来筛选的字段
     filter_keys = ['name', 'description', 'reviewState', "checkinStatus", 'lendStatus', 'reviewed']
 
     def get(self, request, format=None, **kwargs):
+
         if isManager(request.user):
             queryset = Sample.objects.all()
+
+            # 遍历请求的查询参数
             for param in request.query_params:
                 if param in self.filter_keys:
                     param_value = self.request.query_params.get(param, None)
+                    # 每个参数都用来筛选一次 getTrueFalse：用来转换js的true/false 为 python的true/false
                     queryset = queryset.filter(**{param: getTrueFalse(param_value)})
+
             userId = self.request.query_params.get('uploader', None)
+
+            # 如果有userId参数，就再用userId筛选一次
             if userId is not None:
                 queryset = queryset.filter(uploader=User.objects.get(id=userId))
+
+            # 如果有chechInCode就只用它来筛选，用于在入库管理里面通过验证码查询样本入库
             if "checkInCode" in request.query_params:
                 queryset = Sample.objects.filter(checkinCode=request.query_params['checkInCode'])
+
+        # 前端有一个接口，如果有personal参数就返回他自己的sample，（我的上传界面）
         elif "personal" in request.query_params and request.query_params['personal']:
             queryset = Sample.objects.filter(uploader=request.user)
         else:
             queryset = Sample.objects.filter(reviewed=True, reviewState=Sample.STATE_PASSED)
 
+        # 构建筛选字典，由于js的truefalse格式和python不一样，这里转换一下（js开头小写，python开头大写）
         querydict = {}
         for i in request.query_params:
             if i in self.filter_keys:
@@ -83,11 +108,14 @@ class SampleList(ListAPIView):
 
         queryset = queryset.filter(**querydict)
 
+        # 不包括id是1的sample，因为这个sample里面有很多默认的图片（bug）（图片的默认外键是id为1的sample
         queryset = queryset.filter(~Q(id=1))
 
+        # 使用上面定义的序列化器，这里应该是SampleSerializer
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    # 新建sample调用SampleCreateSerializer
     def post(self, request, format=None):
         serializer = SampleCreateSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -96,6 +124,7 @@ class SampleList(ListAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# 对具体Sample的操作，获取详细信息或者修改信息或者删除
 class SampleDetail(RetrieveUpdateAPIView):
     """
     Retrieve, update or delete a sample instance.
@@ -116,6 +145,8 @@ class SampleDetail(RetrieveUpdateAPIView):
 
     def put(self, request, pk, format=None):
         sample = self.get_object(pk)
+
+        # 调用Serializer时如果传了已有的sample进去，就会调用序列化器的update函数而不是create函数
         serializer = SampleCreateSerializer(sample, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -127,11 +158,12 @@ class SampleDetail(RetrieveUpdateAPIView):
         sample.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
+# 处理url形式是 lend/id/pck 和 lend/id/finish 的请求，用以领取和归还标本
 class LendViewset(viewsets.ModelViewSet):
     queryset = Lend.objects.all()
     serializer_class = LendSerializer
     filter_backends = (DjangoFilterBackend,)
+
 
     @action(detail=True, methods=['get'])
     def pick(self, request, pk):
@@ -145,6 +177,7 @@ class LendViewset(viewsets.ModelViewSet):
             serializer = LendSerializer(lend, context={'request': request})
             return Response(serializer.data)
         except Lend.DoesNotExist as e:
+            # 如果碰到Lend不存的错误就返回404错误
             raise Http404()
 
     @action(detail=True, methods=['get'])
@@ -161,7 +194,7 @@ class LendViewset(viewsets.ModelViewSet):
         except Lend.DoesNotExist as e:
             raise Http404()
 
-
+# 用以返回所有的Lend和通过pickCode查询具体的一个lend
 class LendList(ListAPIView):
     filter_backends = (DjangoFilterBackend,)
     serializer_class = LendSerializer
@@ -170,7 +203,7 @@ class LendList(ListAPIView):
         queryset = None
         if "pickCode" in request.query_params:
             queryset = Lend.objects.filter(code=request.query_params['pickCode']).order_by('-createTime')
-            if len(queryset)>0:
+            if len(queryset) > 0:
                 queryset = [queryset[0]]
         else:
             queryset = Sample.objects.all().filter(~Q(lendStatus=Sample.STATE_UNAVAILABLE)) \
@@ -181,11 +214,13 @@ class LendList(ListAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+#对特定sample的具体操作
 class SampleViewSet(viewsets.ViewSet):
     queryset = Sample.objects.all()
     serializer_class = SampleSerializer
     filter_backends = (DjangoFilterBackend,)
 
+    # 审核通过
     @action(detail=True, methods=['get'])
     def passed(self, request, pk=1):
         try:
@@ -198,6 +233,7 @@ class SampleViewSet(viewsets.ViewSet):
         except Sample.DoesNotExist as e:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+    # 审核不通过
     @action(detail=True, methods=['get'])
     def reject(self, request, pk=1):
         try:
@@ -210,12 +246,15 @@ class SampleViewSet(viewsets.ViewSet):
         except Sample.DoesNotExist as e:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+    # 借阅
     @action(detail=True, methods=['get'])
     def borrow(self, request, pk=1):
         try:
             sample = Sample.objects.get(pk=pk)
             sample.lendStatus = Sample.STATE_WAIT
             sample.save()
+
+            #django会自动把user对象放到request中
             lend = Lend.objects.create(to_sample=sample, from_user=request.user)
             lend.init()
             lend.save()
@@ -224,6 +263,7 @@ class SampleViewSet(viewsets.ViewSet):
         except Sample.DoesNotExist as e:
             raise Http404
 
+    # 接收
     @action(detail=True, methods=['get'])
     def checkReceiveCode(self, request, pk=1):
         try:
@@ -235,6 +275,7 @@ class SampleViewSet(viewsets.ViewSet):
         except Sample.DoesNotExist as e:
             raise Http404
 
+    # 没用到
     @action(detail=True, methods=['get'])
     def dismissReceive(self, request, pk=1):
         try:
@@ -250,6 +291,7 @@ class SampleViewSet(viewsets.ViewSet):
 # class SampleViewSet(viewsets.GenericViewSet):
 
 
+# 上传图片
 def upload_file(request):
     if request.method == 'POST':
         new_img = IMG(
@@ -261,6 +303,7 @@ def upload_file(request):
         return HttpResponse('Not a post!')
 
 
+# 处理函数：用来修改密码
 class ChangePasswordView(UpdateAPIView):
     """
     An endpoint for changing password.
@@ -274,15 +317,16 @@ class ChangePasswordView(UpdateAPIView):
         obj = self.request.user
         return obj
 
+    # 处理put请求
     def update(self, request, *args, **kwargs):
         self.object = self.get_object()
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
-            # Check old password
+            # 检查旧密码
             if not self.object.check_password(serializer.data.get("old_password", )):
                 return Response({"detail": "密码错误"}, status=status.HTTP_400_BAD_REQUEST)
-            # set_password also hashes the password that the user will get
+            # 设置新密码
             self.object.set_password(serializer.data.get("new_password", ))
             self.object.save()
             return Response({"detail": "修改成功"}, status=status.HTTP_200_OK)
@@ -290,6 +334,7 @@ class ChangePasswordView(UpdateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# 没用到
 class GetCheckinCode(RetrieveUpdateAPIView):
 
     def get_object(self, pk):
@@ -306,7 +351,7 @@ class GetCheckinCode(RetrieveUpdateAPIView):
         serializer = CheckinCodeSerializer(sample)
         return Response(serializer.data)
 
-
+#没用到
 class VerifyCheckinCode(APIView):
 
     def post(self, request, format=None):
@@ -322,7 +367,7 @@ class VerifyCheckinCode(APIView):
             else:
                 raise Http404
 
-
+# 没用到
 class VerifyPickCode(APIView):
     def post(self, request, format=None):
         if 'code' in request.data:

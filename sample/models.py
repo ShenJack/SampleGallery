@@ -6,11 +6,11 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 
-
 # Create your models here.
 from sample.utils import encryption
 
 
+# 给Model提供更新的函数
 class UpdateMixin(object):
     def update(self, **kwargs):
         if self._state.adding:
@@ -20,12 +20,14 @@ class UpdateMixin(object):
         self.save(update_fields=kwargs.keys())
 
 
+# 继承了UpdateMixin和AbstractUser，updateMixin提供更新能力，abstractUser是django自带的，通过继承新增了几个字段
 class User(AbstractUser, UpdateMixin):
     icon = models.CharField(max_length=100)
     name = models.CharField(max_length=20, default="")
     contact = models.CharField(max_length=20, default="")
 
 
+# 继承Model即可生成一张表
 class Sample(models.Model, UpdateMixin):
     STATE_NEED_REVIEW = "NR"
     STATE_REJECTED = "RJ"
@@ -58,8 +60,11 @@ class Sample(models.Model, UpdateMixin):
         (STATE_IN_STORAGE, '已入库'),
     )
 
+    # 只有models.XXField()的成员变量才会变为表的一个字段
     name = models.TextField()
     description = models.TextField()
+
+    # 外键可以值得目标Model，on_delete为删除外键时对该model的影响，这里是设置成默认，默认为1
     uploader = models.ForeignKey(to=User, related_name='samples', on_delete=models.SET_DEFAULT, default=1)
     uploadTime = models.DateTimeField(default=timezone.now)
     reviewedTime = models.DateTimeField(default=timezone.now)
@@ -89,6 +94,7 @@ class Sample(models.Model, UpdateMixin):
 
 
 class IMG(models.Model):
+    # upload_to ： 上传的目标文件夹
     img = models.ImageField(upload_to='static/img')
     sample = models.ForeignKey(related_name='pics', on_delete=models.CASCADE, to=Sample, default=1)
 
@@ -114,8 +120,9 @@ class Lend(models.Model):
     latestPickTime = models.DateTimeField(default=timezone.now)
     code = models.CharField(max_length=6, default="")
 
+    # 初始化生成最后归还时间/最后领取时间/验证码
     def init(self):
         self.latestPickTime = self.createTime + datetime.timedelta(days=7)
         self.latestReturnTime = self.createTime + datetime.timedelta(days=31)
-        self.code = encryption(str(self.from_user.id) + str(self.to_sample.id)+ str(datetime.datetime.now()))
+        self.code = encryption(str(self.from_user.id) + str(self.to_sample.id) + str(datetime.datetime.now()))
         self.save()
