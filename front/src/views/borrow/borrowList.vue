@@ -6,7 +6,7 @@
         <template v-if="isManager()">
 
           <FormItem class="search-item">
-            <Input v-model="code" @on-search="searchBorrow" search enter-button placeholder="借书验证码"/>
+            <Input v-model="code" @on-search="searchBorrow" search enter-button placeholder="借阅验证码"/>
           </FormItem>
           <FormItem class="search-item">
             <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
