@@ -297,11 +297,11 @@
       },
       return(id) {
         finishBorrow(id).then(resp => {
-          this.$Message.success("还书成功")
+          this.$Message.success("归还成功")
           this.fetchData();
 
         }).catch(err => {
-          this.$Message.error("还书失败")
+          this.$Message.error("归还失败")
           this.fetchData();
 
         })
