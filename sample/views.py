@@ -173,6 +173,7 @@ class LendViewset(viewsets.ModelViewSet):
             sample = lend.to_sample
             sample.lendStatus = sample.STATE_LENT
             sample.save()
+            lend.lendState = Lend.STATE_LENT
             lend.save()
             serializer = LendSerializer(lend, context={'request': request})
             return Response(serializer.data)
@@ -188,6 +189,7 @@ class LendViewset(viewsets.ModelViewSet):
             sample = lend.to_sample
             sample.lendStatus = sample.STATE_AVAILABLE
             sample.save()
+            lend.lendState = Lend.STATE_RETURNED
             lend.save()
             serializer = LendSerializer(lend, context={'request': request})
             return Response(serializer.data)
@@ -205,6 +207,10 @@ class LendViewset(viewsets.ModelViewSet):
             sample.save()
 
             lend.save()
+
+            # 拒绝所有别的Lend
+            Lend.objects.filter(to_sample=sample).filter(~Q(id=lend.id)).update(checkState=Lend.STATE_REJECTED)
+
             serializer = LendSerializer(lend, context={'request': request})
             return Response(serializer.data)
         except Lend.DoesNotExist as e:
@@ -235,8 +241,7 @@ class LendList(ListAPIView):
                 if len(queryset) > 0:
                     queryset = [queryset[0]]
             else:
-                queryset = Sample.objects.all().filter(~Q(lendStatus=Sample.STATE_UNAVAILABLE))
-                queryset = getManagerLends(queryset)
+                queryset = getManagerLends()
         else:
             if "pickCode" in request.query_params:
                 queryset = Lend.objects.filter(code=request.query_params['pickCode'], from_user=request.user).order_by(
@@ -263,16 +268,13 @@ def getLend(queryset, user):
 
     return result
 
-def getManagerLends(queryset):
+
+def getManagerLends():
     result = []
 
-    for i in queryset:
-        # 如果他和当前用户存在借阅记录
-        if len(i.lend.all()) > 0:
-            # 就返回最新的那个
-            result.append(i.lend.all().order_by('-createTime')[0])
-
-    return result
+    # 所有未归还的 和 未被拒绝的 Lend
+    return Lend.objects.all().filter(~Q(lendState=Lend.STATE_RETURNED)).filter(
+        ~Q(checkState=Lend.STATE_REJECTED)).order_by('-createTime')
 
 
 # 对特定sample的具体操作
@@ -315,8 +317,11 @@ class SampleViewSet(viewsets.ViewSet):
             sample.save()
 
             # django会自动把user对象放到request中
-            lend = Lend.objects.create(to_sample=sample, from_user=request.user)
-            lend.init()
+
+            lend, created = Lend.objects.get_or_create(to_sample=sample, from_user=request.user)
+            if created:
+                lend.init()
+            lend.checkState = Lend.STATE_NEED_REVIEW
             lend.save()
             serializer = LendSerializer(lend)
             return Response(serializer.data)

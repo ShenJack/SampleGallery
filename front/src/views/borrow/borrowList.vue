@@ -96,7 +96,7 @@
             title: "状态",
             key: "description",
             render: (h, params) => {
-              return h("div", [h("p", getName(params.row.to_sample.lendStatus))]);
+              return h("div", [h("p", getName(params.row.lendState))]);
             }
           },
           {

@@ -129,7 +129,21 @@ class Lend(models.Model):
     latestPickTime = models.DateTimeField(default=timezone.now)
     code = models.CharField(max_length=6, default="")
 
-    checkState = models.CharField(choices=CHECK_STATUS,max_length=2, default=STATE_NEED_REVIEW)
+    STATE_UNAVAILABLE = "UA"
+    STATE_AVAILABLE = "AV"
+    STATE_WAIT = "WT"
+    STATE_LENT = "LT"
+    STATE_RETURNED = "RT"
+
+    STATE_LEND = (
+        (STATE_AVAILABLE, '可借'),
+        (STATE_WAIT, '等待领取'),
+        (STATE_LENT, '已借出'),
+        (STATE_RETURNED, '已归还')
+    )
+
+    checkState = models.CharField(choices=CHECK_STATUS, max_length=2, default=STATE_NEED_REVIEW)
+    lendState = models.CharField(choices=STATE_LEND, max_length=2, default=STATE_AVAILABLE)
 
     # 初始化生成最后归还时间/最后领取时间/验证码
     def init(self):
