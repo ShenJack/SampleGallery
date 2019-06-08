@@ -158,12 +158,12 @@ class SampleDetail(RetrieveUpdateAPIView):
         sample.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 # 处理url形式是 lend/id/pck 和 lend/id/finish 的请求，用以领取和归还标本
 class LendViewset(viewsets.ModelViewSet):
     queryset = Lend.objects.all()
     serializer_class = LendSerializer
     filter_backends = (DjangoFilterBackend,)
-
 
     @action(detail=True, methods=['get'])
     def pick(self, request, pk):
@@ -194,6 +194,34 @@ class LendViewset(viewsets.ModelViewSet):
         except Lend.DoesNotExist as e:
             raise Http404()
 
+    @action(detail=True, methods=['get'])
+    def passLend(self, request, pk):
+        try:
+            lend = Lend.objects.get(pk=pk)
+            lend.checkState = Lend.STATE_PASSED
+
+            sample = lend.to_sample
+            sample.lendStatus = Sample.STATE_WAIT
+            sample.save()
+
+            lend.save()
+            serializer = LendSerializer(lend, context={'request': request})
+            return Response(serializer.data)
+        except Lend.DoesNotExist as e:
+            raise Http404()
+
+    @action(detail=True, methods=['get'])
+    def rejectLend(self, request, pk):
+        try:
+            lend = Lend.objects.get(pk=pk)
+            lend.checkState = Lend.STATE_REJECTED
+            lend.save()
+            serializer = LendSerializer(lend, context={'request': request})
+            return Response(serializer.data)
+        except Lend.DoesNotExist as e:
+            raise Http404()
+
+
 # 用以返回所有的Lend和通过pickCode查询具体的一个lend
 class LendList(ListAPIView):
     filter_backends = (DjangoFilterBackend,)
@@ -201,20 +229,53 @@ class LendList(ListAPIView):
 
     def get(self, request, format=None, **kwargs):
         queryset = None
-        if "pickCode" in request.query_params:
-            queryset = Lend.objects.filter(code=request.query_params['pickCode']).order_by('-createTime')
-            if len(queryset) > 0:
-                queryset = [queryset[0]]
+        if isManager(request.user):
+            if "pickCode" in request.query_params:
+                queryset = Lend.objects.filter(code=request.query_params['pickCode']).order_by('-createTime')
+                if len(queryset) > 0:
+                    queryset = [queryset[0]]
+            else:
+                queryset = Sample.objects.all().filter(~Q(lendStatus=Sample.STATE_UNAVAILABLE))
+                queryset = getManagerLends(queryset)
         else:
-            queryset = Sample.objects.all().filter(~Q(lendStatus=Sample.STATE_UNAVAILABLE)) \
-                .filter(~Q(lendStatus=Sample.STATE_AVAILABLE))
-            queryset = [sample.lend.all().order_by('-createTime')[0] for sample in queryset]
+            if "pickCode" in request.query_params:
+                queryset = Lend.objects.filter(code=request.query_params['pickCode'], from_user=request.user).order_by(
+                    '-createTime')
+                if len(queryset) > 0:
+                    queryset = [queryset[0]]
+            else:
+                # 所有可以借的Sample
+                queryset = Sample.objects.all().filter(~Q(lendStatus=Sample.STATE_UNAVAILABLE))
+                queryset = getLend(queryset, request.user)
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-#对特定sample的具体操作
+def getLend(queryset, user):
+    result = []
+    # 对每个sample
+    for i in queryset:
+        # 如果他和当前用户存在借阅记录
+        if len(i.lend.all().filter(from_user=user)) > 0:
+            # 就返回最新的那个
+            result.append(i.lend.all().filter(from_user=user).order_by('-createTime')[0])
+
+    return result
+
+def getManagerLends(queryset):
+    result = []
+
+    for i in queryset:
+        # 如果他和当前用户存在借阅记录
+        if len(i.lend.all()) > 0:
+            # 就返回最新的那个
+            result.append(i.lend.all().order_by('-createTime')[0])
+
+    return result
+
+
+# 对特定sample的具体操作
 class SampleViewSet(viewsets.ViewSet):
     queryset = Sample.objects.all()
     serializer_class = SampleSerializer
@@ -251,10 +312,9 @@ class SampleViewSet(viewsets.ViewSet):
     def borrow(self, request, pk=1):
         try:
             sample = Sample.objects.get(pk=pk)
-            sample.lendStatus = Sample.STATE_WAIT
             sample.save()
 
-            #django会自动把user对象放到request中
+            # django会自动把user对象放到request中
             lend = Lend.objects.create(to_sample=sample, from_user=request.user)
             lend.init()
             lend.save()
@@ -351,7 +411,8 @@ class GetCheckinCode(RetrieveUpdateAPIView):
         serializer = CheckinCodeSerializer(sample)
         return Response(serializer.data)
 
-#没用到
+
+# 没用到
 class VerifyCheckinCode(APIView):
 
     def post(self, request, format=None):
@@ -366,6 +427,7 @@ class VerifyCheckinCode(APIView):
                 return Response(SampleSerializer(sample).data)
             else:
                 raise Http404
+
 
 # 没用到
 class VerifyPickCode(APIView):

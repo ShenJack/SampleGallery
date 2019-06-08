@@ -111,6 +111,15 @@ def update(model, **kwargs):
 
 
 class Lend(models.Model):
+    STATE_NEED_REVIEW = "NR"
+    STATE_REJECTED = "RJ"
+    STATE_PASSED = 'PS'
+    CHECK_STATUS = (
+        (STATE_NEED_REVIEW, '待审核'),
+        (STATE_PASSED, '审核通过'),
+        (STATE_REJECTED, '审核未通过'),
+    )
+
     from_user = models.ForeignKey(to=User, related_name='lend', on_delete=models.CASCADE)
     to_sample = models.ForeignKey(to=Sample, related_name='lend', on_delete=models.CASCADE)
     createTime = models.DateTimeField(default=timezone.now)
@@ -119,6 +128,8 @@ class Lend(models.Model):
     latestReturnTime = models.DateTimeField(default=timezone.now)
     latestPickTime = models.DateTimeField(default=timezone.now)
     code = models.CharField(max_length=6, default="")
+
+    checkState = models.CharField(choices=CHECK_STATUS,max_length=2, default=STATE_NEED_REVIEW)
 
     # 初始化生成最后归还时间/最后领取时间/验证码
     def init(self):

@@ -4,19 +4,14 @@
       <Form v-if="!useInside" class="form" label-position="left" inline>
 
         <template v-if="isManager()">
-
           <FormItem class="search-item">
             <Input v-model="code" @on-search="searchBorrow" search enter-button placeholder="借阅验证码"/>
           </FormItem>
           <FormItem class="search-item">
             <Button id="reset-button" @click="resetSearch" style="margin-left: 10px">重置</Button>
           </FormItem>
-
-
         </template>
-
       </Form>
-
     </div>
 
     <Table :columns="columns" :data="data"></Table>
@@ -41,7 +36,7 @@
   import {getUsers} from "../../service/api/user";
   import {isManager, isUser} from "../../utils/auth";
   import {checkPick, checkReceive} from "../../service/api/sample";
-  import {finishBorrow, getBorrows, pickBorrow} from "../../service/api/borrow";
+  import {finishBorrow, getBorrows, passLend, pickBorrow, rejectLend} from "../../service/api/borrow";
 
   export default {
     components: {},
@@ -52,7 +47,7 @@
     },
     data() {
       return {
-        code:"",
+        code: "",
         showReceive: false,
         showPick: false,
         reviewedSelect: reviewedSelect,
@@ -105,13 +100,20 @@
             }
           },
           {
+            title: "审核状态",
+            key: "description",
+            render: (h, params) => {
+              return h("div", [h("p", getName(params.row.checkState))]);
+            }
+          },
+          {
             title: "操作",
             width: 200,
             align: "center",
             render: (h, params) => {
               if (isManager()) {
                 let result = []
-                if (params.row.to_sample.lendStatus === 'LT') {
+                if (params.row.checkState === 'NR') {
                   result.push(h(
                     "Button",
                     {
@@ -124,14 +126,13 @@
                       },
                       on: {
                         click: () => {
-                          this.return(params.row.id);
+                          this.pass(params.row.id);
                         }
                       }
                     },
-                    "归还"
+                    "通过"
                   ))
-                }else if(params.row.to_sample.lendStatus === 'WT'){
-                  result.push(                  h(
+                  result.push(h(
                     "Button",
                     {
                       props: {
@@ -140,41 +141,84 @@
                       },
                       on: {
                         click: () => {
-                          this.pick(params.row.id);
+                          this.reject(params.row.id);
                         }
                       }
                     },
-                    "借出"
+                    "拒绝"
                     )
                   )
+                } else if (params.row.checkState === 'PS') {
+                  if (params.row.to_sample.lendStatus === 'LT') {
+                    result.push(h(
+                      "Button",
+                      {
+                        props: {
+                          type: "primary",
+                          size: "small"
+                        },
+                        style: {
+                          marginRight: "5px"
+                        },
+                        on: {
+                          click: () => {
+                            this.return(params.row.id);
+                          }
+                        }
+                      },
+                      "归还"
+                    ))
+                  } else if (params.row.to_sample.lendStatus === 'WT') {
+                    result.push(h(
+                      "Button",
+                      {
+                        props: {
+                          type: "error",
+                          size: "small"
+                        },
+                        on: {
+                          click: () => {
+                            this.pick(params.row.id);
+                          }
+                        }
+                      },
+                      "借出"
+                      )
+                    )
+                  }
+
                 }
                 return h("div", result);
               } else {
-                return h("div", [
-                  h(
-                    "Button",
-                    {
-                      props: {
-                        type: "primary",
-                        size: "small"
-                      },
-                      style: {
-                        marginRight: "5px"
-                      },
-                      on: {
-                        click: () => {
-                          this.showCode(params.row.code);
+                if (params.row.checkState === 'PS') {
+                  return h("div", [
+                    h(
+                      "Button",
+                      {
+                        props: {
+                          type: "primary",
+                          size: "small"
+                        },
+                        style: {
+                          marginRight: "5px"
+                        },
+                        on: {
+                          click: () => {
+                            this.showCode(params.row.code);
+                          }
                         }
-                      }
-                    },
-                    "查看借阅码"
-                  ),
-                ]);
+                      },
+                      "查看借阅码"
+                    ),
+                  ]);
+                } else if (params.row.checkState === 'RJ') {
+                  return h("div", "审核未通过");
+                } else {
+                  return h("div", "等待审核");
+                }
               }
             }
           }
-
-
         ],
         data: []
       };
@@ -293,6 +337,20 @@
           this.$Message.error("借阅失败")
           this.fetchData();
 
+        })
+      },
+
+      reject(id) {
+        rejectLend(id).then((resp) => {
+          this.$Message.warning("已拒绝")
+          this.fetchData()
+        })
+      },
+
+      pass(id) {
+        passLend(id).then(resp => {
+          this.$Message.warning("已通过")
+          this.fetchData()
         })
       },
       return(id) {

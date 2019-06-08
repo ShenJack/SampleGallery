@@ -29,3 +29,12 @@ export const pickBorrow = (id) => {
 export const borrow = (id) => {
   return axios.get("/api/samples/" + id + '/borrow/')
 }
+
+export const rejectLend = (id) => {
+  return axios.get("/api/borrows/" + id + '/rejectLend/')
+}
+
+export const passLend = (id) => {
+  return axios.get("/api/borrows/" + id + '/passLend/')
+}
+

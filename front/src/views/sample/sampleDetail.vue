@@ -431,7 +431,7 @@
       borrow(){
         borrow(this.srcData.id).then(resp=>{
           this.$Modal.success({
-            title: '借阅成功',
+            title: '申请成功',
             content: "请前往我的外借查看详细的借阅信息",
             onOk: () => {
               // this.$Message.info('Clicked ok');
