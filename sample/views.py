@@ -322,6 +322,7 @@ class SampleViewSet(viewsets.ViewSet):
             if created:
                 lend.init()
             lend.checkState = Lend.STATE_NEED_REVIEW
+            lend.lendState = Lend.STATE_AVAILABLE
             lend.save()
             serializer = LendSerializer(lend)
             return Response(serializer.data)
