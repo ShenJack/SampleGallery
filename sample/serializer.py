@@ -226,6 +226,7 @@ class LendSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'checkState',
+            'lendState',
             'from_user',
             'to_sample',
             'createTime',

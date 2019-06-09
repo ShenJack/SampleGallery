@@ -264,7 +264,7 @@ def getLend(queryset, user):
         # 如果他和当前用户存在借阅记录
         if len(i.lend.all().filter(from_user=user)) > 0:
             # 就返回最新的那个
-            result.append(i.lend.all().filter(from_user=user).order_by('-createTime')[0])
+            result.append(i.lend.all().filter(from_user=user).filter(~Q(lendState=Lend.STATE_RETURNED)).order_by('-createTime')[0])
 
     return result
 
